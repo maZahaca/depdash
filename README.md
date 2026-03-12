@@ -1,6 +1,6 @@
 # DepDash - Dependency Vulnerability Dashboard
 
-![Tests](https://github.com/YOUR_USERNAME/depdash/workflows/Tests/badge.svg)
+![Tests](https://github.com/mazahaca/depdash/workflows/Tests/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **Status:** ✅ Production Ready | **Version:** 1.0.0 | **Tests:** 60/60 Passing

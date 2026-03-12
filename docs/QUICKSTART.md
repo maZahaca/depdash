@@ -12,7 +12,7 @@ Get started with DepDash in 5 minutes.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourorg/depdash.git
+git clone https://github.com/mazahaca/depdash.git
 cd depdash
 
 # Install dependencies

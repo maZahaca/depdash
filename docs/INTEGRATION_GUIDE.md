@@ -67,6 +67,12 @@ DepDash supports the following security scanners:
 | Go | govulncheck | `govulncheck -json ./...` | CODE |
 | Python | pip-audit | `pip-audit --format json` | CODE |
 | Docker | Trivy | `trivy image --format json <image>` | DOCKER_IMAGE |
+| NuGet (.NET) | dotnet list package | `dotnet list package --vulnerable --format json` | CODE |
+| Swift (iOS/macOS) | swift package audit | `swift package audit --format json` | CODE |
+| Android (Kotlin/Java) | OWASP Dependency-Check | `./gradlew dependencyCheckAnalyze --format JSON` | CODE |
+| Rust | cargo audit | `cargo audit --json` | CODE |
+| Ruby | bundler-audit | `bundle audit --format json` | CODE |
+| PHP | composer audit | `composer audit --format=json` | CODE |
 
 ---
 
@@ -321,6 +327,319 @@ jobs:
 
 ---
 
+### NuGet (.NET)
+
+#### GitHub Actions
+
+```yaml
+name: .NET Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  nuget-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run dotnet list package
+        id: audit
+        run: dotnet list package --vulnerable --format json > nuget-report.json || true
+
+      - name: Send report to DepDash
+        if: always()
+        run: |
+          curl -X POST https://depdash.your-company.com/api/v1/audits \
+            -H "Authorization: Bearer ${{ secrets.DEPDASH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ecosystem": "NUGET",
+            "dependencyType": "CODE",
+            "path": ".",
+            "report": $(cat nuget-report.json),
+            "commitSha": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "scanSource": "GitHub Actions",
+            "scanJobUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+```
+
+---
+
+### Swift (iOS/macOS)
+
+#### GitHub Actions
+
+```yaml
+name: Swift Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  swift-audit:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: '5.9'
+
+      - name: Run swift package audit
+        id: audit
+        run: swift package audit --format json > swift-report.json || true
+
+      - name: Send report to DepDash
+        if: always()
+        run: |
+          curl -X POST https://depdash.your-company.com/api/v1/audits \
+            -H "Authorization: Bearer ${{ secrets.DEPDASH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ecosystem": "SWIFT",
+            "dependencyType": "CODE",
+            "path": ".",
+            "report": $(cat swift-report.json),
+            "commitSha": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "scanSource": "GitHub Actions",
+            "scanJobUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+```
+
+**Note:** `swift package audit` is experimental in Swift 5.9+. Enable with `--enable-experimental-swift-package-audit` if needed.
+
+---
+
+### Android (Kotlin/Java)
+
+#### GitHub Actions
+
+```yaml
+name: Android Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  android-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Run dependency-check
+        run: ./gradlew dependencyCheckAnalyze --format JSON || true
+
+      - name: Send report to DepDash
+        if: always()
+        run: |
+          curl -X POST https://depdash.your-company.com/api/v1/audits \
+            -H "Authorization: Bearer ${{ secrets.DEPDASH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ecosystem": "ANDROID",
+            "dependencyType": "CODE",
+            "path": ".",
+            "report": $(cat build/reports/dependency-check-report.json),
+            "commitSha": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "scanSource": "OWASP Dependency-Check",
+            "scanJobUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+```
+
+**Setup:** Add to `build.gradle`:
+```gradle
+plugins {
+  id 'org.owasp.dependencycheck' version '8.4.0'
+}
+
+dependencyCheck {
+  format = 'JSON'
+}
+```
+
+---
+
+### Rust
+
+#### GitHub Actions
+
+```yaml
+name: Rust Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run cargo audit
+        id: audit
+        run: cargo audit --json > cargo-audit-report.json || true
+
+      - name: Send report to DepDash
+        if: always()
+        run: |
+          curl -X POST https://depdash.your-company.com/api/v1/audits \
+            -H "Authorization: Bearer ${{ secrets.DEPDASH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ecosystem": "RUST",
+            "dependencyType": "CODE",
+            "path": ".",
+            "report": $(cat cargo-audit-report.json),
+            "commitSha": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "scanSource": "cargo-audit",
+            "scanJobUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+```
+
+---
+
+### Ruby
+
+#### GitHub Actions
+
+```yaml
+name: Ruby Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  bundler-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install bundler-audit
+        run: gem install bundler-audit
+
+      - name: Update vulnerability database
+        run: bundle audit update
+
+      - name: Run bundler-audit
+        id: audit
+        run: bundle audit --format json > bundler-audit-report.json || true
+
+      - name: Send report to DepDash
+        if: always()
+        run: |
+          curl -X POST https://depdash.your-company.com/api/v1/audits \
+            -H "Authorization: Bearer ${{ secrets.DEPDASH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ecosystem": "RUBY",
+            "dependencyType": "CODE",
+            "path": ".",
+            "report": $(cat bundler-audit-report.json),
+            "commitSha": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "scanSource": "bundler-audit",
+            "scanJobUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+```
+
+---
+
+### PHP
+
+#### GitHub Actions
+
+```yaml
+name: PHP Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  composer-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      - name: Install dependencies
+        run: composer install --no-dev --prefer-dist
+
+      - name: Run composer audit
+        id: audit
+        run: composer audit --format=json > composer-audit-report.json || true
+
+      - name: Send report to DepDash
+        if: always()
+        run: |
+          curl -X POST https://depdash.your-company.com/api/v1/audits \
+            -H "Authorization: Bearer ${{ secrets.DEPDASH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "repository": "${{ github.repository }}",
+            "ecosystem": "PHP",
+            "dependencyType": "CODE",
+            "path": ".",
+            "report": $(cat composer-audit-report.json),
+            "commitSha": "${{ github.sha }}",
+            "branch": "${{ github.ref_name }}",
+            "scanSource": "composer-audit",
+            "scanJobUrl": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }
+          EOF
+```
+
+---
+
 ## Mono-repo Support
 
 For mono-repos with multiple projects, scan each directory separately:
@@ -405,7 +724,7 @@ Ingest a security audit report.
 {
   // Required fields
   "repository": string,        // Repository name (e.g., "myorg/myapp")
-  "ecosystem": string,          // NPM | GO | PYTHON | DOCKER | NUGET | SWIFT | ANDROID
+  "ecosystem": string,          // NPM | GO | PYTHON | DOCKER | NUGET | SWIFT | ANDROID | RUST | RUBY | PHP
   "report": object | string,    // The audit report (JSON object or JSON string)
 
   // Optional fields
@@ -446,7 +765,7 @@ Ingest a security audit report.
   "details": [
     {
       "path": ["ecosystem"],
-      "message": "Invalid enum value. Expected 'NPM' | 'GO' | 'PYTHON' | 'DOCKER' | 'NUGET' | 'SWIFT' | 'ANDROID'"
+      "message": "Invalid enum value. Expected 'NPM' | 'GO' | 'PYTHON' | 'DOCKER' | 'NUGET' | 'SWIFT' | 'ANDROID' | 'RUST' | 'RUBY' | 'PHP'"
     }
   ]
 }
@@ -510,7 +829,7 @@ EOF
 **Cause:** Request body doesn't match expected schema.
 
 **Solution:**
-- Ensure `ecosystem` is one of: NPM, GO, PYTHON, DOCKER, NUGET, SWIFT, ANDROID
+- Ensure `ecosystem` is one of: NPM, GO, PYTHON, DOCKER, NUGET, SWIFT, ANDROID, RUST, RUBY, PHP
 - Ensure `repository` field is provided
 - Ensure `report` is valid JSON
 
@@ -526,6 +845,12 @@ EOF
    - Go: `govulncheck -json` (not plain text)
    - Python: `pip-audit --format json`
    - Trivy: `--format json`
+   - NuGet: `dotnet list package --vulnerable --format json`
+   - Swift: `swift package audit --format json`
+   - Android: `./gradlew dependencyCheckAnalyze --format JSON`
+   - Rust: `cargo audit --json`
+   - Ruby: `bundle audit --format json`
+   - PHP: `composer audit --format=json`
 
 2. **No vulnerabilities in report**
    - Check the scanner found vulnerabilities
@@ -686,6 +1011,6 @@ jobs:
 
 ## Need Help?
 
-- **Documentation:** [Full docs](https://docs.depdash.com)
-- **Issues:** [GitHub Issues](https://github.com/yourorg/depdash/issues)
-- **Support:** security@your-company.com
+- **Documentation:** [Full docs](https://depdash.dev/docs)
+- **Issues:** [GitHub Issues](https://github.com/mazahaca/depdash/issues)
+- **Support:** support@depdash.dev
