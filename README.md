@@ -165,8 +165,6 @@ npm run lint
 
 - **[Quick Start Guide](./docs/QUICKSTART.md)** - Get running in 5 minutes
 - **[Integration Guide](./docs/INTEGRATION_GUIDE.md)** - CI/CD integration with examples
-- [DESIGN.md](./DESIGN.md) - Complete system design and architecture
-- [IMPLEMENTATION.md](./IMPLEMENTATION.md) - Implementation progress tracker
 
 ## Supported Scanners
 
