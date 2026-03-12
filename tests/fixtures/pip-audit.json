@@ -1,0 +1,16 @@
+{
+  "dependencies": [
+    {
+      "name": "django",
+      "version": "3.2.0",
+      "vulns": [
+        {
+          "id": "PYSEC-2023-45",
+          "fix_versions": ["3.2.19", "4.0.4", "4.1.0"],
+          "aliases": ["CVE-2023-23969", "GHSA-qmf9-6jqf-j8fq"],
+          "description": "Django 3.2 before 3.2.19, 4.0 before 4.0.4, and 4.1 before 4.1.0 allows SQL injection in the Trunc(kind) and Extract(lookup_name) database functions."
+        }
+      ]
+    }
+  ]
+}

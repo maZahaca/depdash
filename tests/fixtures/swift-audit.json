@@ -1,0 +1,15 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "GHSA-xxxx-yyyy-zzzz",
+      "summary": "SQL Injection vulnerability in SQLite.swift",
+      "package": {
+        "name": "SQLite.swift",
+        "version": "0.13.0"
+      },
+      "severity": "high",
+      "url": "https://github.com/advisories/GHSA-xxxx-yyyy-zzzz",
+      "fixed_version": "0.14.0"
+    }
+  ]
+}

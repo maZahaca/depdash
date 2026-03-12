@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "parameters": "--vulnerable",
+  "projects": [
+    {
+      "path": "/src/MyApp/MyApp.csproj",
+      "frameworks": [
+        {
+          "framework": "net6.0",
+          "topLevelPackages": [
+            {
+              "id": "Newtonsoft.Json",
+              "requestedVersion": "[12.0.1, )",
+              "resolvedVersion": "12.0.1",
+              "vulnerabilities": [
+                {
+                  "severity": "High",
+                  "advisoryurl": "https://github.com/advisories/GHSA-5crp-9r3c-p9vr"
+                }
+              ]
+            }
+          ],
+          "transitivePackages": []
+        }
+      ]
+    }
+  ]
+}

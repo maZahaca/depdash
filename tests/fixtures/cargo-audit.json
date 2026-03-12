@@ -1,0 +1,42 @@
+{
+  "database": {
+    "advisory-count": 500,
+    "last-commit": "abc123",
+    "last-updated": "2023-12-01T12:00:00Z"
+  },
+  "lockfile": {
+    "path": "Cargo.lock"
+  },
+  "vulnerabilities": {
+    "found": true,
+    "count": 1,
+    "list": [
+      {
+        "advisory": {
+          "id": "RUSTSEC-2023-0001",
+          "package": "time",
+          "title": "Potential segfault in the time crate",
+          "description": "Unix-like operating systems may segfault due to dereferencing a dangling pointer...",
+          "date": "2023-01-15",
+          "aliases": ["CVE-2023-12345", "GHSA-abcd-efgh-ijkl"],
+          "url": "https://rustsec.org/advisories/RUSTSEC-2023-0001.html",
+          "cvss": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+        },
+        "versions": {
+          "patched": [">=0.3.17"],
+          "unaffected": []
+        },
+        "package": {
+          "name": "time",
+          "version": "0.3.16",
+          "source": "registry+https://github.com/rust-lang/crates.io-index"
+        }
+      }
+    ]
+  },
+  "warnings": {
+    "unmaintained": [],
+    "unsound": [],
+    "yanked": []
+  }
+}

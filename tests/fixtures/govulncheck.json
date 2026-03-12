@@ -1,0 +1,57 @@
+[
+  {
+    "osv": {
+      "schema_version": "1.3.1",
+      "id": "GO-2023-1234",
+      "modified": "2023-06-12T13:37:31Z",
+      "published": "2023-06-01T13:37:31Z",
+      "aliases": ["CVE-2023-12345", "GHSA-xxxx-yyyy-zzzz"],
+      "summary": "Denial of service in example package",
+      "details": "A maliciously crafted input can cause excessive memory consumption.",
+      "affected": [
+        {
+          "package": {
+            "name": "github.com/example/vulnerable",
+            "ecosystem": "Go"
+          },
+          "ranges": [
+            {
+              "type": "SEMVER",
+              "events": [
+                {
+                  "introduced": "0"
+                },
+                {
+                  "fixed": "1.2.3"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "references": [
+        {
+          "type": "ADVISORY",
+          "url": "https://github.com/advisories/GHSA-xxxx-yyyy-zzzz"
+        }
+      ],
+      "database_specific": {
+        "url": "https://pkg.go.dev/vuln/GO-2023-1234"
+      }
+    }
+  },
+  {
+    "finding": {
+      "osv": "GO-2023-1234",
+      "fixed_version": "v1.2.3",
+      "trace": [
+        {
+          "module": "github.com/example/vulnerable",
+          "version": "v1.0.0",
+          "package": "github.com/example/vulnerable",
+          "function": "VulnerableFunc"
+        }
+      ]
+    }
+  }
+]

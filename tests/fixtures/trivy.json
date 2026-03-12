@@ -1,0 +1,23 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "alpine:3.17",
+  "Results": [
+    {
+      "Target": "alpine:3.17 (alpine 3.17.0)",
+      "Class": "os-pkgs",
+      "Type": "alpine",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2023-1234",
+          "PkgName": "libcrypto3",
+          "InstalledVersion": "3.0.7-r0",
+          "FixedVersion": "3.0.8-r0",
+          "Title": "openssl: timing attack in RSA Decryption implementation",
+          "Description": "A timing based side channel exists in the OpenSSL RSA Decryption implementation...",
+          "Severity": "HIGH",
+          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2023-1234"
+        }
+      ]
+    }
+  ]
+}

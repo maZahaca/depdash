@@ -1,0 +1,48 @@
+{
+  "reportSchema": "1.1",
+  "scanInfo": {
+    "engineVersion": "7.4.4"
+  },
+  "projectInfo": {
+    "name": "MyAndroidApp"
+  },
+  "dependencies": [
+    {
+      "fileName": "okhttp-3.12.0.jar",
+      "filePath": "/build/libs/okhttp-3.12.0.jar",
+      "packages": [
+        {
+          "id": "pkg:maven/com.squareup.okhttp3/okhttp@3.12.0",
+          "confidence": "HIGH"
+        }
+      ],
+      "vulnerabilities": [
+        {
+          "source": "NVD",
+          "name": "CVE-2021-0341",
+          "severity": "MEDIUM",
+          "cvssv3": {
+            "baseScore": 5.9,
+            "attackVector": "NETWORK",
+            "attackComplexity": "HIGH",
+            "privilegesRequired": "NONE",
+            "userInteraction": "NONE",
+            "scope": "UNCHANGED",
+            "confidentialityImpact": "NONE",
+            "integrityImpact": "HIGH",
+            "availabilityImpact": "NONE",
+            "baseSeverity": "MEDIUM"
+          },
+          "description": "In OkHttp before version 3.12.12, there is a vulnerability...",
+          "references": [
+            {
+              "source": "NVD",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-0341",
+              "name": "CVE-2021-0341"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "advisories": {
+    "symfony/http-kernel": [
+      {
+        "advisoryId": "GHSA-abcd-1234-efgh",
+        "packageName": "symfony/http-kernel",
+        "title": "Symfony HttpKernel - Session fixation vulnerability",
+        "affectedVersions": ">=2.0.0,<2.8.52|>=3.0.0,<3.4.35|>=4.0.0,<4.4.13|>=5.0.0,<5.1.5",
+        "cve": "CVE-2020-15094",
+        "link": "https://github.com/advisories/GHSA-abcd-1234-efgh",
+        "sources": [
+          {
+            "name": "GitHub Security Advisory",
+            "remoteId": "GHSA-abcd-1234-efgh"
+          },
+          {
+            "name": "CVE",
+            "remoteId": "CVE-2020-15094"
+          }
+        ],
+        "reportedAt": "2020-07-29T15:01:21+00:00",
+        "composerRepository": "https://packagist.org"
+      }
+    ]
+  }
+}

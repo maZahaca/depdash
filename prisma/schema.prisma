@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth Models
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  password      String? // Hashed password (optional - null for OAuth users)
+  emailVerified DateTime?
+  image         String?
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships OrganizationMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Organization & Members
+model Organization {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members       OrganizationMember[]
+  repositories  Repository[]
+  settings      Settings?
+  apiTokens     ApiToken[]
+  slackWebhooks SlackWebhook[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           MemberRole   @default(MEMBER)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, userId])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// Settings
+model Settings {
+  id             String       @id @default(uuid())
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Fix timelines (days)
+  criticalDays Int @default(7)
+  highDays     Int @default(30)
+  mediumDays   Int @default(90)
+  lowDays      Int @default(180)
+
+  // Retention policies (null = keep forever)
+  retainScansForDays    Int?
+  retainResolvedForDays Int?
+
+  // Integrations
+  slackWebhookUrl String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// API Tokens
+model ApiToken {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name      String
+  tokenHash String @unique
+  prefix    String // First 8 chars for display
+
+  lastUsedAt DateTime?
+  createdBy  String?
+  createdAt  DateTime  @default(now())
+
+  @@index([organizationId])
+}
+
+// Slack Integration
+model SlackWebhook {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  webhookUrl String
+  channel    String?
+  enabled    Boolean @default(true)
+
+  notifyOnNewVuln     Boolean @default(true)
+  notifyOnCritical    Boolean @default(true)
+  notifyOnScanFailure Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// Repositories
+model Repository {
+  id             String       @id @default(uuid())
+  name           String // e.g., "owner/repo-name"
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects Project[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+// Projects (for mono-repo support)
+model Project {
+  id           String     @id @default(uuid())
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  path           String // e.g., "packages/frontend", "services/api", "."
+  ecosystem      Ecosystem
+  dependencyType DependencyType @default(CODE)
+  lastScanAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vulnerabilities RepositoryVulnerability[]
+  scans           AuditScan[]
+
+  @@unique([repositoryId, path, ecosystem, dependencyType])
+  @@index([repositoryId])
+}
+
+enum Ecosystem {
+  NPM
+  GO
+  PYTHON
+  NUGET
+  SWIFT
+  ANDROID
+  DOCKER
+  RUST
+  RUBY
+  PHP
+}
+
+enum DependencyType {
+  CODE // Code dependencies (npm, go modules, pip, etc.)
+  DOCKER_IMAGE // Docker image vulnerabilities (base images, layers)
+}
+
+// Advisories
+model Advisory {
+  id String @id @default(uuid())
+
+  advisoryId String   @unique
+  title      String
+  url        String?
+  severity   Severity
+  cve        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vulnerabilities RepositoryVulnerability[]
+
+  @@index([severity])
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+// Vulnerabilities
+model RepositoryVulnerability {
+  id String @id @default(uuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  advisoryId String
+  advisory   Advisory @relation(fields: [advisoryId], references: [id])
+
+  dependencyName String
+  versionRange   String
+  currentVersion String?
+  isFixAvailable Boolean
+  fixedVersion   String?
+
+  firstSeenAt DateTime   @default(now())
+  lastSeenAt  DateTime   @updatedAt
+  fixByDate   DateTime
+  status      VulnStatus @default(OPEN)
+  resolvedAt  DateTime?
+
+  // Status change metadata
+  statusChangedAt DateTime?
+  statusChangedBy String?
+  statusNote      String? // Reason for status change
+  postponedUntil  DateTime? // For POSTPONED status
+
+  scanSource String?
+  scanJobUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, advisoryId, dependencyName])
+  @@index([projectId])
+  @@index([status, fixByDate])
+  @@index([postponedUntil])
+}
+
+enum VulnStatus {
+  OPEN
+  RESOLVED
+  ACCEPTED_RISK
+  FALSE_POSITIVE
+  POSTPONED
+  WONT_FIX
+}
+
+// Audit Scans
+model AuditScan {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  scannedAt DateTime @default(now())
+  source    String?
+  jobUrl    String?
+  commitSha String?
+  branch    String?
+
+  vulnCount     Int
+  newCount      Int
+  resolvedCount Int
+
+  @@index([projectId, scannedAt])
+}
