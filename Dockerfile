@@ -1,16 +1,20 @@
 ARG NODE_VERSION=24.14.0-alpine3.23
 
+# Dependencies stage
+FROM node:${NODE_VERSION} AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
 # Build stage
 FROM node:${NODE_VERSION} AS builder
-
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
+# Install all dependencies (including dev)
 RUN npm ci
 
 # Generate Prisma Client
@@ -24,8 +28,6 @@ RUN npm run build
 
 # Production stage
 FROM node:${NODE_VERSION} AS runner
-
-# Set working directory
 WORKDIR /app
 
 # Set environment to production
@@ -35,12 +37,19 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
+# Copy production dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy Prisma client
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copy built application
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
+
+# Copy package.json for npm start
+COPY --from=builder /app/package.json ./package.json
 
 # Change ownership to nextjs user
 RUN chown -R nextjs:nodejs /app
@@ -60,4 +69,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

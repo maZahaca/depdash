@@ -250,8 +250,8 @@ npm run dev
 # Build for production
 npm run build
 
-# Start production server (requires standalone build)
-node .next/standalone/server.js
+# Start production server
+npm start
 
 # Database commands
 npm run db:push      # Push schema changes
