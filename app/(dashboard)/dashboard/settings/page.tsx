@@ -21,6 +21,11 @@ export default async function SettingsPage() {
     return <div>No organization found</div>;
   }
 
+  // Check access - only non-VIEWER roles can access
+  if (membership.role === "VIEWER") {
+    notFound();
+  }
+
   // Get or create settings
   let settings = await prisma.settings.findUnique({
     where: { organizationId: membership.organizationId },

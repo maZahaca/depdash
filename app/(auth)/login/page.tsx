@@ -6,10 +6,24 @@ import { redirect } from "next/navigation";
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const params = await searchParams;
 
+  // Check if OAuth providers are configured (server-side only)
+  const isGoogleConfigured = !!(
+    process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+  const isGithubConfigured = !!(
+    process.env.GITHUB_CLIENT_ID &&
+    process.env.GITHUB_CLIENT_SECRET
+  );
+  const hasOAuthProviders = isGoogleConfigured || isGithubConfigured;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <img src="/DepDash.svg" alt="DepDash" className="h-16 w-16" />
+          </div>
           <CardTitle className="text-3xl">DepDash</CardTitle>
           <CardDescription>Dependency Vulnerability Dashboard</CardDescription>
         </CardHeader>
@@ -67,42 +81,46 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
+          {hasOAuthProviders && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <form
-              action={async () => {
-                "use server";
-                await signIn("google");
-              }}
-            >
-              <Button variant="outline" className="w-full" type="submit">
-                Continue with Google
-              </Button>
-            </form>
+              <div className="space-y-2">
+                {isGoogleConfigured && (
+                  <form
+                    action={async () => {
+                      "use server";
+                      await signIn("google");
+                    }}
+                  >
+                    <Button variant="outline" className="w-full" type="submit">
+                      Continue with Google
+                    </Button>
+                  </form>
+                )}
 
-            <form
-              action={async () => {
-                "use server";
-                await signIn("github");
-              }}
-            >
-              <Button variant="outline" className="w-full" type="submit">
-                Continue with GitHub
-              </Button>
-            </form>
-          </div>
-
-          <p className="text-xs text-center text-muted-foreground">
-            For testing, use: admin@depdash.dev / password
-          </p>
+                {isGithubConfigured && (
+                  <form
+                    action={async () => {
+                      "use server";
+                      await signIn("github");
+                    }}
+                  >
+                    <Button variant="outline" className="w-full" type="submit">
+                      Continue with GitHub
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

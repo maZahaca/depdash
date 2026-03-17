@@ -22,6 +22,11 @@ export default async function IntegrationsPage() {
     return <div>No organization found</div>;
   }
 
+  // Check access - only non-VIEWER roles can access
+  if (membership.role === "VIEWER") {
+    notFound();
+  }
+
   // Fetch API tokens
   const tokens = await prisma.apiToken.findMany({
     where: { organizationId: membership.organizationId },
