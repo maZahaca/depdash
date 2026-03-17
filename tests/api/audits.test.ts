@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 // Test data
 const TEST_ORG_ID = randomUUID();
@@ -79,7 +77,6 @@ describe('Audit API Integration', () => {
     await prisma.repository.deleteMany({ where: { id: TEST_REPO_ID } });
     await prisma.apiToken.deleteMany({ where: { id: TEST_TOKEN_ID } });
     await prisma.organization.deleteMany({ where: { id: TEST_ORG_ID } });
-    await prisma.$disconnect();
   });
 
   it('should reject request without API token', async () => {

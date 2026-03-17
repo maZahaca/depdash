@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 describe('Authentication API', () => {
   let testUser: any;
@@ -33,7 +31,6 @@ describe('Authentication API', () => {
     await prisma.organizationMember.deleteMany();
     await prisma.organization.deleteMany();
     await prisma.user.deleteMany();
-    await prisma.$disconnect();
   });
 
   it('should reject login with invalid credentials', async () => {

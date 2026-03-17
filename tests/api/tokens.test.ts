@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 describe('API Token Creation', () => {
   let testUser: any;
@@ -54,7 +52,6 @@ describe('API Token Creation', () => {
     await prisma.organizationMember.deleteMany();
     await prisma.organization.deleteMany();
     await prisma.user.deleteMany();
-    await prisma.$disconnect();
   });
 
   async function login(): Promise<string | null> {
