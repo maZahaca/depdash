@@ -6,11 +6,13 @@ import GitHubProvider from 'next-auth/providers/github';
 import { authConfig } from './auth.config';
 import prisma from './lib/prisma';
 import { z } from 'zod';
+import { skipCSRFCheck } from '@auth/core';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
+  ...(process.env.NODE_ENV === 'test' && { skipCSRFCheck: skipCSRFCheck }),
   providers: [
     CredentialsProvider({
       name: 'Email',

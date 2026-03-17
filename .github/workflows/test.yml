@@ -88,7 +88,11 @@ jobs:
           # Wait for server to be ready
           timeout 60 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
         env:
-          NODE_ENV: production
+          NODE_ENV: test
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/depdash_test
+          NEXTAUTH_SECRET: test-secret-key-for-github-actions-testing-only
+          NEXTAUTH_URL: http://localhost:3000
+          AUTH_TRUST_HOST: true
 
       - name: Run API integration tests
         run: npm test -- --run tests/api
