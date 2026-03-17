@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
+import Image from "next/image";
 
 export default async function Home() {
   const session = await auth();
@@ -11,7 +12,7 @@ export default async function Home() {
       <header className="border-b bg-white">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/DepDash.svg" alt="DepDash" className="h-8 w-8" />
+            <Image src="/DepDash.svg" alt="DepDash" width={32} height={32} />
             <span className="text-2xl font-bold">DepDash</span>
           </Link>
           <Link href={session?.user ? "/dashboard" : "/login"}>

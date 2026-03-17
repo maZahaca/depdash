@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '5mb',
     },
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push('pg-native');
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

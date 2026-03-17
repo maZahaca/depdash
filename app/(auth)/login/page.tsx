@@ -2,6 +2,7 @@ import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const params = await searchParams;
@@ -22,7 +23,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src="/DepDash.svg" alt="DepDash" className="h-16 w-16" />
+            <Image src="/DepDash.svg" alt="DepDash" width={64} height={64} />
           </div>
           <CardTitle className="text-3xl">DepDash</CardTitle>
           <CardDescription>Dependency Vulnerability Dashboard</CardDescription>
@@ -43,6 +44,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                   redirectTo: "/dashboard",
                 });
               } catch (e) {
+                // Check if it's a redirect error (which is expected behavior)
+                if (e && typeof e === 'object' && 'digest' in e && typeof e.digest === 'string' && e.digest.startsWith('NEXT_REDIRECT')) {
+                  throw e; // Re-throw redirect errors
+                }
                 console.error("Login failed:", e);
                 redirect("/login?error=Invalid credentials");
               }

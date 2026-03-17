@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import prisma from "@/lib/prisma";
+import Image from "next/image";
 
 export default async function DashboardLayout({
   children,
@@ -29,7 +30,7 @@ export default async function DashboardLayout({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <img src="/DepDash.svg" alt="DepDash" className="h-8 w-8" />
+              <Image src="/DepDash.svg" alt="DepDash" width={32} height={32} />
               <span className="text-2xl font-bold">DepDash</span>
             </Link>
             <nav className="flex space-x-4">

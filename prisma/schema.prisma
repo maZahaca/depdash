@@ -25,6 +25,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
 
 model Account {
@@ -43,6 +45,7 @@ model Account {
   session_state     String?
 
   @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
 model Session {
@@ -51,6 +54,8 @@ model Session {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expires      DateTime
+
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -59,6 +64,7 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 // Organization & Members
@@ -75,6 +81,8 @@ model Organization {
   settings      Settings?
   apiTokens     ApiToken[]
   slackWebhooks SlackWebhook[]
+
+  @@map("organizations")
 }
 
 model OrganizationMember {
@@ -89,6 +97,7 @@ model OrganizationMember {
   updatedAt DateTime @updatedAt
 
   @@unique([organizationId, userId])
+  @@map("organization_members")
 }
 
 enum MemberRole {
@@ -96,6 +105,8 @@ enum MemberRole {
   ADMIN
   MEMBER
   VIEWER
+
+  @@map("member_role")
 }
 
 // Settings
@@ -119,6 +130,8 @@ model Settings {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }
 
 // API Tokens
@@ -136,6 +149,7 @@ model ApiToken {
   createdAt  DateTime  @default(now())
 
   @@index([organizationId])
+  @@map("api_tokens")
 }
 
 // Slack Integration
@@ -156,6 +170,7 @@ model SlackWebhook {
   updatedAt DateTime @updatedAt
 
   @@index([organizationId])
+  @@map("slack_webhooks")
 }
 
 // Repositories
@@ -172,6 +187,7 @@ model Repository {
 
   @@unique([organizationId, name])
   @@index([organizationId])
+  @@map("repositories")
 }
 
 // Projects (for mono-repo support)
@@ -193,6 +209,7 @@ model Project {
 
   @@unique([repositoryId, path, ecosystem, dependencyType])
   @@index([repositoryId])
+  @@map("projects")
 }
 
 enum Ecosystem {
@@ -206,11 +223,15 @@ enum Ecosystem {
   RUST
   RUBY
   PHP
+
+  @@map("ecosystem")
 }
 
 enum DependencyType {
   CODE // Code dependencies (npm, go modules, pip, etc.)
   DOCKER_IMAGE // Docker image vulnerabilities (base images, layers)
+
+  @@map("dependency_type")
 }
 
 // Advisories
@@ -229,6 +250,7 @@ model Advisory {
   vulnerabilities RepositoryVulnerability[]
 
   @@index([severity])
+  @@map("advisories")
 }
 
 enum Severity {
@@ -237,6 +259,8 @@ enum Severity {
   MEDIUM
   LOW
   INFO
+
+  @@map("severity")
 }
 
 // Vulnerabilities
@@ -277,6 +301,7 @@ model RepositoryVulnerability {
   @@index([projectId])
   @@index([status, fixByDate])
   @@index([postponedUntil])
+  @@map("repository_vulnerabilities")
 }
 
 enum VulnStatus {
@@ -286,6 +311,8 @@ enum VulnStatus {
   FALSE_POSITIVE
   POSTPONED
   WONT_FIX
+
+  @@map("vuln_status")
 }
 
 // Audit Scans
@@ -305,4 +332,5 @@ model AuditScan {
   resolvedCount Int
 
   @@index([projectId, scannedAt])
+  @@map("audit_scans")
 }

@@ -67,6 +67,7 @@ jobs:
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/depdash_test" >> $GITHUB_ENV
           echo "NEXTAUTH_SECRET=test-secret-key-for-github-actions-testing-only" >> $GITHUB_ENV
           echo "NEXTAUTH_URL=http://localhost:3000" >> $GITHUB_ENV
+          echo "AUTH_TRUST_HOST=true" >> $GITHUB_ENV
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -82,7 +83,7 @@ jobs:
 
       - name: Start Next.js server
         run: |
-          npm start &
+          node .next/standalone/server.js &
           echo "SERVER_PID=$!" >> $GITHUB_ENV
           # Wait for server to be ready
           timeout 60 bash -c 'until curl -f http://localhost:3000 > /dev/null 2>&1; do sleep 2; done'
