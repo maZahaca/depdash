@@ -51,12 +51,12 @@ jobs:
         run: npx prisma generate
 
       - name: Build and start services with Docker Compose
-        run: docker-compose -f docker-compose.test.yml up -d --build
+        run: docker compose -f docker-compose.test.yml up -d --build
 
       - name: Wait for services to be healthy
         run: |
           echo "Waiting for app to be healthy..."
-          timeout 120 bash -c 'until docker-compose -f docker-compose.test.yml ps | grep "healthy"; do sleep 2; done'
+          timeout 120 bash -c 'until docker compose -f docker-compose.test.yml ps | grep "healthy"; do sleep 2; done'
 
       - name: Run API integration tests
         run: npm test -- --run tests/api
@@ -65,11 +65,11 @@ jobs:
 
       - name: Show app container logs
         if: always()
-        run: docker-compose -f docker-compose.test.yml logs app
+        run: docker compose -f docker-compose.test.yml logs app
 
       - name: Stop and remove containers
         if: always()
-        run: docker-compose -f docker-compose.test.yml down -v
+        run: docker compose -f docker-compose.test.yml down -v
 
   lint:
     name: Lint & Type Check
