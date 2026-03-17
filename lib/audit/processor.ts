@@ -268,6 +268,12 @@ async function getOrCreateSettings(organizationId: string) {
         highDays: 30,
         mediumDays: 90,
         lowDays: 180,
+        retainScansForDays: process.env.RETAIN_SCANS_FOR_DAYS
+          ? parseInt(process.env.RETAIN_SCANS_FOR_DAYS)
+          : 90,
+        retainResolvedForDays: process.env.RETAIN_RESOLVED_FOR_DAYS
+          ? parseInt(process.env.RETAIN_RESOLVED_FOR_DAYS)
+          : 30,
       },
     });
   }

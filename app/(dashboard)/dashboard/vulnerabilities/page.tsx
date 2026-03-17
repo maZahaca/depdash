@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { VulnerabilityFilters } from "@/components/vulnerability/filters";
 import { VulnerabilityTable } from "@/components/vulnerability/vulnerability-table";
 import { VulnStatus, Severity } from "@prisma/client";
+import { NextResponse } from "next/server";
+import { notFound } from "next/navigation";
 
 export default async function VulnerabilitiesPage({
   searchParams,
@@ -12,6 +14,10 @@ export default async function VulnerabilitiesPage({
 }) {
   const session = await auth();
   const params = await searchParams;
+
+  if (!session?.user?.id) {
+    notFound();
+  }
 
   // Get user's first organization (for demo)
   const membership = await prisma.organizationMember.findFirst({

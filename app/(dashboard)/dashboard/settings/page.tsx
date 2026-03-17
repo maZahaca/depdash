@@ -2,9 +2,14 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { notFound } from "next/navigation";
 
 export default async function SettingsPage() {
   const session = await auth();
+
+  if (!session?.user?.id) {
+    notFound();
+  }
 
   // Get user's first organization
   const membership = await prisma.organizationMember.findFirst({
@@ -29,6 +34,12 @@ export default async function SettingsPage() {
         highDays: 30,
         mediumDays: 90,
         lowDays: 180,
+        retainScansForDays: process.env.RETAIN_SCANS_FOR_DAYS
+          ? parseInt(process.env.RETAIN_SCANS_FOR_DAYS)
+          : 90,
+        retainResolvedForDays: process.env.RETAIN_RESOLVED_FOR_DAYS
+          ? parseInt(process.env.RETAIN_RESOLVED_FOR_DAYS)
+          : 30,
       },
     });
   }
@@ -87,20 +98,6 @@ export default async function SettingsPage() {
                   : "Keep forever"}
               </p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>API Tokens</CardTitle>
-            <CardDescription>
-              Manage API tokens for CI/CD integration (coming soon)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Use API tokens to authenticate audit report submissions from your CI/CD pipelines.
-            </p>
           </CardContent>
         </Card>
       </div>

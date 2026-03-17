@@ -3,9 +3,14 @@ import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VulnStatus, Severity } from "@prisma/client";
+import { notFound } from "next/navigation";
 
 export default async function RepositoriesPage() {
   const session = await auth();
+
+  if (!session?.user?.id) {
+    notFound();
+  }
 
   // Get user's first organization
   const membership = await prisma.organizationMember.findFirst({

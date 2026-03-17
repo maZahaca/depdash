@@ -1,8 +1,11 @@
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const params = await searchParams;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
@@ -11,10 +14,24 @@ export default function LoginPage() {
           <CardDescription>Dependency Vulnerability Dashboard</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {params.error && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md text-sm">
+              {params.error}
+            </div>
+          )}
           <form
             action={async (formData) => {
               "use server";
-              await signIn("credentials", formData);
+              try {
+                await signIn("credentials", {
+                  email: formData.get("email"),
+                  password: formData.get("password"),
+                  redirectTo: "/dashboard",
+                });
+              } catch (e) {
+                console.error("Login failed:", e);
+                redirect("/login?error=Invalid credentials");
+              }
             }}
           >
             <div className="space-y-4">

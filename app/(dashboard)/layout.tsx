@@ -37,6 +37,12 @@ export default async function DashboardLayout({
                 Repositories
               </Link>
               <Link
+                href="/dashboard/scans"
+                className="text-sm font-medium hover:text-primary"
+              >
+                Scans
+              </Link>
+              <Link
                 href="/dashboard/analytics"
                 className="text-sm font-medium hover:text-primary"
               >

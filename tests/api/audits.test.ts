@@ -15,6 +15,15 @@ let TEST_TOKEN_ID = '';
 // Run with: npm run dev (in separate terminal) then npm test
 describe('Audit API Integration', () => {
   beforeAll(async () => {
+    // Clean up any existing test data first
+    await prisma.repositoryVulnerability.deleteMany({
+      where: { project: { repository: { organizationId: TEST_ORG_ID } } },
+    });
+    await prisma.project.deleteMany({ where: { repositoryId: TEST_REPO_ID } });
+    await prisma.repository.deleteMany({ where: { id: TEST_REPO_ID } });
+    await prisma.apiToken.deleteMany({ where: { organizationId: TEST_ORG_ID } });
+    await prisma.organization.deleteMany({ where: { id: TEST_ORG_ID } });
+
     // Create test organization
     await prisma.organization.create({
       data: {

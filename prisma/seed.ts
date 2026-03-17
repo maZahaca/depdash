@@ -65,12 +65,17 @@ async function main() {
       highDays: 30,
       mediumDays: 90,
       lowDays: 180,
-      retainScansForDays: 90,
-      retainResolvedForDays: 30,
+      retainScansForDays: process.env.RETAIN_SCANS_FOR_DAYS
+        ? parseInt(process.env.RETAIN_SCANS_FOR_DAYS)
+        : 90,
+      retainResolvedForDays: process.env.RETAIN_RESOLVED_FOR_DAYS
+        ? parseInt(process.env.RETAIN_RESOLVED_FOR_DAYS)
+        : 30,
     },
   });
 
   console.log('✅ Created organization settings');
+  console.log(`   Retention: Scans ${settings.retainScansForDays} days, Resolved ${settings.retainResolvedForDays} days`);
 
   // Create API token
   const tokenString = 'depdash_test_' + Math.random().toString(36).substring(2, 15);
