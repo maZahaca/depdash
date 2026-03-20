@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 interface SlackWebhookFormProps {
   organizationId: string;
   initialWebhookUrl: string;
+  canEdit: boolean;
 }
 
 export function SlackWebhookForm({
   organizationId,
   initialWebhookUrl,
+  canEdit,
 }: SlackWebhookFormProps) {
   const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl);
   const [loading, setLoading] = useState(false);
@@ -82,6 +84,7 @@ export function SlackWebhookForm({
           placeholder="https://hooks.slack.com/services/..."
           value={webhookUrl}
           onChange={(e) => setWebhookUrl(e.target.value)}
+          disabled={!canEdit}
         />
         <p className="text-xs text-muted-foreground mt-1">
           Get your webhook URL from{" "}
@@ -96,26 +99,28 @@ export function SlackWebhookForm({
         </p>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={handleSave} disabled={loading}>
-          {loading ? "Saving..." : "Save Webhook"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleTest}
-          disabled={testLoading || !webhookUrl}
-        >
-          {testLoading ? "Sending..." : "Send Test"}
-        </Button>
-        {webhookUrl && (
-          <Button
-            variant="ghost"
-            onClick={() => setWebhookUrl("")}
-          >
-            Clear
+      {canEdit && (
+        <div className="flex gap-2">
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? "Saving..." : "Save Webhook"}
           </Button>
-        )}
-      </div>
+          <Button
+            variant="outline"
+            onClick={handleTest}
+            disabled={testLoading || !webhookUrl}
+          >
+            {testLoading ? "Sending..." : "Send Test"}
+          </Button>
+          {webhookUrl && (
+            <Button
+              variant="ghost"
+              onClick={() => setWebhookUrl("")}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

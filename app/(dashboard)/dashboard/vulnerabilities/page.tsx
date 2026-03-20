@@ -1,31 +1,24 @@
-import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VulnerabilityFilters } from "@/components/vulnerability/filters";
 import { VulnerabilityTable } from "@/components/vulnerability/vulnerability-table";
 import { VulnStatus, Severity } from "@prisma/client";
-import { NextResponse } from "next/server";
-import { notFound } from "next/navigation";
+import { requireViewAccess } from "@/lib/auth-utils";
 
 export default async function VulnerabilitiesPage({
   searchParams,
 }: {
   searchParams: Promise<{ severity?: string; status?: string }>;
 }) {
-  const session = await auth();
+  const authContext = await requireViewAccess("vulnerabilities");
   const params = await searchParams;
 
-  if (!session?.user?.id) {
-    notFound();
-  }
-
-  // Get user's first organization (for demo)
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session!.user!.id },
-    include: { organization: true },
+  // Get organization details
+  const organization = await prisma.organization.findUnique({
+    where: { id: authContext.organizationId },
   });
 
-  if (!membership) {
+  if (!organization) {
     return <div>No organization found</div>;
   }
 
@@ -33,7 +26,7 @@ export default async function VulnerabilitiesPage({
   const where: any = {
     project: {
       repository: {
-        organizationId: membership.organizationId,
+        organizationId: authContext.organizationId,
       },
     },
   };
@@ -81,7 +74,7 @@ export default async function VulnerabilitiesPage({
       <div>
         <h1 className="text-3xl font-bold">Vulnerabilities</h1>
         <p className="text-muted-foreground">
-          Organization: {membership.organization.name}
+          Organization: {organization.name}
         </p>
       </div>
 

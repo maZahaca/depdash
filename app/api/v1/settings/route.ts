@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { requireApiViewAccess, requireApiEditAccess } from '@/lib/api-auth';
 
 const UpdateSettingsSchema = z.object({
   criticalDays: z.number().int().positive().optional(),
@@ -14,29 +14,15 @@ const UpdateSettingsSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authContext = await requireApiViewAccess(request, 'settings');
+    if (authContext instanceof NextResponse) {
+      return authContext;
     }
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
 
-    if (!organizationId) {
-      return NextResponse.json({ error: 'organizationId required' }, { status: 400 });
-    }
-
-    // Verify user has access
-    const membership = await prisma.organizationMember.findUnique({
-      where: {
-        organizationId_userId: {
-          organizationId,
-          userId: session.user.id,
-        },
-      },
-    });
-
-    if (!membership) {
+    if (!organizationId || organizationId !== authContext.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -73,29 +59,15 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authContext = await requireApiEditAccess(request, 'settings');
+    if (authContext instanceof NextResponse) {
+      return authContext;
     }
 
     const { searchParams } = new URL(request.url);
     const organizationId = searchParams.get('organizationId');
 
-    if (!organizationId) {
-      return NextResponse.json({ error: 'organizationId required' }, { status: 400 });
-    }
-
-    // Verify user has access and is at least ADMIN
-    const membership = await prisma.organizationMember.findUnique({
-      where: {
-        organizationId_userId: {
-          organizationId,
-          userId: session.user.id,
-        },
-      },
-    });
-
-    if (!membership || !['OWNER', 'ADMIN'].includes(membership.role)) {
+    if (!organizationId || organizationId !== authContext.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

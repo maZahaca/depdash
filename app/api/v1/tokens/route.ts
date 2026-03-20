@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
 import { randomBytes, createHash } from "crypto";
 import { z } from "zod";
+import { requireApiEditAccess, requireApiViewAccess } from "@/lib/api-auth";
 
 const CreateTokenSchema = z.object({
   name: z.string().min(1).max(100),
@@ -11,26 +11,17 @@ const CreateTokenSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authContext = await requireApiEditAccess(request, "api_tokens");
+    if (authContext instanceof NextResponse) {
+      return authContext;
     }
 
     const body = await request.json();
     const validated = CreateTokenSchema.parse(body);
 
-    // Verify user is member of the organization
-    const membership = await prisma.organizationMember.findUnique({
-      where: {
-        organizationId_userId: {
-          organizationId: validated.organizationId,
-          userId: session.user.id,
-        },
-      },
-    });
-
-    if (!membership) {
-      return NextResponse.json({ error: "Not a member of this organization" }, { status: 403 });
+    // Verify user has access to the organization
+    if (validated.organizationId !== authContext.organizationId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Generate secure random token
@@ -45,7 +36,7 @@ export async function POST(request: NextRequest) {
         tokenHash,
         prefix,
         organizationId: validated.organizationId,
-        createdBy: session.user.id,
+        createdBy: authContext.userId,
       },
     });
 

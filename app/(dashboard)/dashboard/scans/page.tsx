@@ -1,4 +1,3 @@
-import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,27 +6,22 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Ecosystem } from "@prisma/client";
 import { ScanFilters } from "@/components/scans/scan-filters";
-import { notFound } from "next/navigation";
+import { requireViewAccess } from "@/lib/auth-utils";
 
 export default async function ScansPage({
   searchParams,
 }: {
   searchParams: Promise<{ repository?: string; ecosystem?: string }>;
 }) {
-  const session = await auth();
+  const authContext = await requireViewAccess("scans");
   const params = await searchParams;
 
-  if (!session?.user?.id) {
-    notFound();
-  }
-
-  // Get user's first organization
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session!.user!.id },
-    include: { organization: true },
+  // Get organization details
+  const organization = await prisma.organization.findUnique({
+    where: { id: authContext.organizationId },
   });
 
-  if (!membership) {
+  if (!organization) {
     return <div>No organization found</div>;
   }
 
@@ -35,7 +29,7 @@ export default async function ScansPage({
   const where: any = {
     project: {
       repository: {
-        organizationId: membership.organizationId,
+        organizationId: authContext.organizationId,
       },
     },
   };
@@ -75,7 +69,7 @@ export default async function ScansPage({
 
   // Get unique repositories and ecosystems for filters
   const repositories = await prisma.repository.findMany({
-    where: { organizationId: membership.organizationId },
+    where: { organizationId: authContext.organizationId },
     select: { name: true },
     orderBy: { name: 'asc' },
   });
@@ -93,7 +87,7 @@ export default async function ScansPage({
       <div>
         <h1 className="text-3xl font-bold">Scan History</h1>
         <p className="text-muted-foreground">
-          Organization: {membership.organization.name}
+          Organization: {organization.name}
         </p>
       </div>
 

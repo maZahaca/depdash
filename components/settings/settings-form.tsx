@@ -14,9 +14,10 @@ interface SettingsFormProps {
     retainResolvedForDays: number | null;
   };
   organizationId: string;
+  canEdit: boolean;
 }
 
-export function SettingsForm({ settings, organizationId }: SettingsFormProps) {
+export function SettingsForm({ settings, organizationId, canEdit }: SettingsFormProps) {
   const [values, setValues] = useState(settings);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -60,6 +61,7 @@ export function SettingsForm({ settings, organizationId }: SettingsFormProps) {
             onChange={(e) =>
               setValues({ ...values, criticalDays: parseInt(e.target.value) })
             }
+            disabled={!canEdit}
           />
         </div>
         <div>
@@ -73,6 +75,7 @@ export function SettingsForm({ settings, organizationId }: SettingsFormProps) {
             onChange={(e) =>
               setValues({ ...values, highDays: parseInt(e.target.value) })
             }
+            disabled={!canEdit}
           />
         </div>
         <div>
@@ -86,6 +89,7 @@ export function SettingsForm({ settings, organizationId }: SettingsFormProps) {
             onChange={(e) =>
               setValues({ ...values, mediumDays: parseInt(e.target.value) })
             }
+            disabled={!canEdit}
           />
         </div>
         <div>
@@ -99,24 +103,27 @@ export function SettingsForm({ settings, organizationId }: SettingsFormProps) {
             onChange={(e) =>
               setValues({ ...values, lowDays: parseInt(e.target.value) })
             }
+            disabled={!canEdit}
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save Settings"}
-        </Button>
-        {message && (
-          <span
-            className={`text-sm ${
-              message.includes("success") ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {message}
-          </span>
-        )}
-      </div>
+      {canEdit && (
+        <div className="flex items-center gap-4">
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save Settings"}
+          </Button>
+          {message && (
+            <span
+              className={`text-sm ${
+                message.includes("success") ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {message}
+            </span>
+          )}
+        </div>
+      )}
     </form>
   );
 }

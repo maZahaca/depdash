@@ -1,40 +1,32 @@
-import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SettingsForm } from "@/components/settings/settings-form";
-import { notFound } from "next/navigation";
+import { requireViewAccess, checkEditAccess } from "@/lib/auth-utils";
 
 export default async function SettingsPage() {
-  const session = await auth();
+  const authContext = await requireViewAccess("settings");
 
-  if (!session?.user?.id) {
-    notFound();
-  }
-
-  // Get user's first organization
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session!.user!.id },
-    include: { organization: true },
+  // Get organization details
+  const organization = await prisma.organization.findUnique({
+    where: { id: authContext.organizationId },
   });
 
-  if (!membership) {
+  if (!organization) {
     return <div>No organization found</div>;
   }
 
-  // Check access - only non-VIEWER roles can access
-  if (membership.role === "VIEWER") {
-    notFound();
-  }
+  // Check if user can edit
+  const canEdit = await checkEditAccess("settings");
 
   // Get or create settings
   let settings = await prisma.settings.findUnique({
-    where: { organizationId: membership.organizationId },
+    where: { organizationId: authContext.organizationId },
   });
 
   if (!settings) {
     settings = await prisma.settings.create({
       data: {
-        organizationId: membership.organizationId,
+        organizationId: authContext.organizationId,
         criticalDays: 7,
         highDays: 30,
         mediumDays: 90,
@@ -54,7 +46,7 @@ export default async function SettingsPage() {
       <div>
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground">
-          Organization: {membership.organization.name}
+          Organization: {organization.name}
         </p>
       </div>
 
@@ -76,7 +68,8 @@ export default async function SettingsPage() {
                 retainScansForDays: settings.retainScansForDays,
                 retainResolvedForDays: settings.retainResolvedForDays,
               }}
-              organizationId={membership.organizationId}
+              organizationId={authContext.organizationId}
+              canEdit={canEdit}
             />
           </CardContent>
         </Card>

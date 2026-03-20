@@ -1,41 +1,33 @@
-import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiTokenList } from "@/components/integrations/api-token-list";
 import { SlackWebhookForm } from "@/components/integrations/slack-webhook-form";
-import { notFound } from "next/navigation";
+import { requireViewAccess, checkEditAccess } from "@/lib/auth-utils";
 
 export default async function IntegrationsPage() {
-  const session = await auth();
+  const authContext = await requireViewAccess("integrations");
 
-  if (!session?.user?.id) {
-    notFound();
-  }
-
-  // Get user's first organization
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
-    include: { organization: true },
+  // Get organization details
+  const organization = await prisma.organization.findUnique({
+    where: { id: authContext.organizationId },
   });
 
-  if (!membership) {
+  if (!organization) {
     return <div>No organization found</div>;
   }
 
-  // Check access - only non-VIEWER roles can access
-  if (membership.role === "VIEWER") {
-    notFound();
-  }
+  // Check if user can edit
+  const canEdit = await checkEditAccess("integrations");
 
   // Fetch API tokens
   const tokens = await prisma.apiToken.findMany({
-    where: { organizationId: membership.organizationId },
+    where: { organizationId: authContext.organizationId },
     orderBy: { createdAt: "desc" },
   });
 
   // Fetch organization settings for Slack webhook
   const settings = await prisma.settings.findUnique({
-    where: { organizationId: membership.organizationId },
+    where: { organizationId: authContext.organizationId },
     select: { slackWebhookUrl: true },
   });
 
@@ -44,7 +36,7 @@ export default async function IntegrationsPage() {
       <div>
         <h1 className="text-3xl font-bold">Integrations</h1>
         <p className="text-muted-foreground">
-          Organization: {membership.organization.name}
+          Organization: {organization.name}
         </p>
       </div>
 
@@ -57,7 +49,7 @@ export default async function IntegrationsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ApiTokenList tokens={tokens} organizationId={membership.organizationId} />
+          <ApiTokenList tokens={tokens} organizationId={authContext.organizationId} canEdit={canEdit} />
         </CardContent>
       </Card>
 
@@ -71,8 +63,9 @@ export default async function IntegrationsPage() {
         </CardHeader>
         <CardContent>
           <SlackWebhookForm
-            organizationId={membership.organizationId}
+            organizationId={authContext.organizationId}
             initialWebhookUrl={settings?.slackWebhookUrl || ""}
+            canEdit={canEdit}
           />
         </CardContent>
       </Card>

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { requireApiEditAccess } from "@/lib/api-auth";
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authContext = await requireApiEditAccess(request, "api_tokens");
+    if (authContext instanceof NextResponse) {
+      return authContext;
     }
 
     const { id } = await params;
@@ -17,25 +17,15 @@ export async function DELETE(
     // Find the token
     const token = await prisma.apiToken.findUnique({
       where: { id },
-      include: { organization: true },
     });
 
     if (!token) {
       return NextResponse.json({ error: "Token not found" }, { status: 404 });
     }
 
-    // Verify user is member of the organization
-    const membership = await prisma.organizationMember.findUnique({
-      where: {
-        organizationId_userId: {
-          organizationId: token.organizationId,
-          userId: session.user.id,
-        },
-      },
-    });
-
-    if (!membership) {
-      return NextResponse.json({ error: "Not authorized to delete this token" }, { status: 403 });
+    // Verify token belongs to user's organization
+    if (token.organizationId !== authContext.organizationId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Delete the token

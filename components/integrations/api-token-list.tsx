@@ -24,9 +24,10 @@ interface ApiToken {
 interface ApiTokenListProps {
   tokens: ApiToken[];
   organizationId: string;
+  canEdit: boolean;
 }
 
-export function ApiTokenList({ tokens, organizationId }: ApiTokenListProps) {
+export function ApiTokenList({ tokens, organizationId, canEdit }: ApiTokenListProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const [newTokenName, setNewTokenName] = useState("");
@@ -95,13 +96,17 @@ export function ApiTokenList({ tokens, organizationId }: ApiTokenListProps) {
   return (
     <>
       <div className="space-y-4">
-        <Button onClick={() => setShowCreateDialog(true)}>
-          Generate New Token
-        </Button>
+        {canEdit && (
+          <Button onClick={() => setShowCreateDialog(true)}>
+            Generate New Token
+          </Button>
+        )}
 
         {tokens.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No API tokens yet. Generate one to start ingesting audit reports.
+            {canEdit
+              ? "No API tokens yet. Generate one to start ingesting audit reports."
+              : "No API tokens configured."}
           </p>
         ) : (
           <div className="space-y-3">
@@ -124,15 +129,17 @@ export function ApiTokenList({ tokens, organizationId }: ApiTokenListProps) {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleRevokeToken(token.id)}
-                  >
-                    Revoke
-                  </Button>
-                </div>
+                {canEdit && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleRevokeToken(token.id)}
+                    >
+                      Revoke
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

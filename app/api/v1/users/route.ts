@@ -1,23 +1,13 @@
-import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { requireApiEditAccess } from "@/lib/api-auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if user has permission to add users (OWNER or ADMIN)
-    const membership = await prisma.organizationMember.findFirst({
-      where: { userId: session.user.id },
-    });
-
-    if (!membership || (membership.role !== "OWNER" && membership.role !== "ADMIN")) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    const authContext = await requireApiEditAccess(request, "users");
+    if (authContext instanceof NextResponse) {
+      return authContext;
     }
 
     const body = await request.json();
@@ -28,6 +18,11 @@ export async function POST(request: NextRequest) {
         { error: "Email, password, role, and organizationId are required" },
         { status: 400 }
       );
+    }
+
+    // Verify organization matches auth context
+    if (organizationId !== authContext.organizationId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Validate role

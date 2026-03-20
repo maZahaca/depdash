@@ -1,27 +1,25 @@
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import prisma from "@/lib/prisma";
 import Image from "next/image";
+import { requireAuth } from "@/lib/auth-utils";
+import { canView } from "@/lib/permissions";
+import prisma from "@/lib/prisma";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const authContext = await requireAuth();
+
+  // Get session for email display
   const session = await auth();
 
-  if (!session?.user) {
-    redirect("/login");
-  }
-
-  // Get user's role in the organization
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
-  });
-
-  const userRole = membership?.role || "VIEWER";
+  // Check which navigation items user can view
+  const showIntegrations = canView(authContext.role, "integrations");
+  const showSettings = canView(authContext.role, "settings");
+  const showUsers = canView(authContext.role, "users");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -58,32 +56,34 @@ export default async function DashboardLayout({
               >
                 Analytics
               </Link>
-              {userRole !== "VIEWER" && (
-                <>
-                  <Link
-                    href="/dashboard/integrations"
-                    className="text-sm font-medium hover:text-primary"
-                  >
-                    Integrations
-                  </Link>
-                  <Link
-                    href="/dashboard/settings"
-                    className="text-sm font-medium hover:text-primary"
-                  >
-                    Settings
-                  </Link>
-                  <Link
-                    href="/dashboard/users"
-                    className="text-sm font-medium hover:text-primary"
-                  >
-                    Users
-                  </Link>
-                </>
+              {showIntegrations && (
+                <Link
+                  href="/dashboard/integrations"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Integrations
+                </Link>
+              )}
+              {showSettings && (
+                <Link
+                  href="/dashboard/settings"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Settings
+                </Link>
+              )}
+              {showUsers && (
+                <Link
+                  href="/dashboard/users"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Users
+                </Link>
               )}
             </nav>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">{session.user.email}</span>
+            <span className="text-sm text-muted-foreground">{session?.user?.email}</span>
             <form
               action={async () => {
                 "use server";

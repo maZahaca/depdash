@@ -1,30 +1,24 @@
-import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VulnStatus, Severity } from "@prisma/client";
-import { notFound } from "next/navigation";
+import { requireViewAccess } from "@/lib/auth-utils";
 
 export default async function RepositoriesPage() {
-  const session = await auth();
+  const authContext = await requireViewAccess("repositories");
 
-  if (!session?.user?.id) {
-    notFound();
-  }
-
-  // Get user's first organization
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session!.user!.id },
-    include: { organization: true },
+  // Get organization details
+  const organization = await prisma.organization.findUnique({
+    where: { id: authContext.organizationId },
   });
 
-  if (!membership) {
+  if (!organization) {
     return <div>No organization found</div>;
   }
 
   // Fetch repositories with projects and vulnerability counts
   const repositories = await prisma.repository.findMany({
-    where: { organizationId: membership.organizationId },
+    where: { organizationId: authContext.organizationId },
     include: {
       projects: {
         include: {
@@ -45,7 +39,7 @@ export default async function RepositoriesPage() {
       <div>
         <h1 className="text-3xl font-bold">Repositories</h1>
         <p className="text-muted-foreground">
-          Organization: {membership.organization.name}
+          Organization: {organization.name}
         </p>
       </div>
 

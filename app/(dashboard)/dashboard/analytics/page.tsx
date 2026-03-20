@@ -1,14 +1,9 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnalyticsCharts } from "@/components/analytics/analytics-charts";
+import { requireViewAccess } from "@/lib/auth-utils";
 
 export default async function AnalyticsPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect("/login");
-  }
+  await requireViewAccess("analytics");
 
   return (
     <div className="space-y-6">
