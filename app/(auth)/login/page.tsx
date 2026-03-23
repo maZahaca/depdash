@@ -16,7 +16,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     process.env.GITHUB_CLIENT_ID &&
     process.env.GITHUB_CLIENT_SECRET
   );
-  const hasOAuthProviders = isGoogleConfigured || isGithubConfigured;
+  const isGitlabConfigured = !!(
+    process.env.GITLAB_CLIENT_ID &&
+    process.env.GITLAB_CLIENT_SECRET
+  );
+  const hasOAuthProviders = isGoogleConfigured || isGithubConfigured || isGitlabConfigured;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -120,6 +124,19 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                   >
                     <Button variant="outline" className="w-full" type="submit">
                       Continue with GitHub
+                    </Button>
+                  </form>
+                )}
+
+                {isGitlabConfigured && (
+                  <form
+                    action={async () => {
+                      "use server";
+                      await signIn("gitlab");
+                    }}
+                  >
+                    <Button variant="outline" className="w-full" type="submit">
+                      Continue with GitLab
                     </Button>
                   </form>
                 )}

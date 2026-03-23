@@ -3,6 +3,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
+import GitLabProvider from 'next-auth/providers/gitlab';
 import { authConfig } from './auth.config';
 import prisma from './lib/prisma';
 import { z } from 'zod';
@@ -65,6 +66,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           GitHubProvider({
             clientId: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+    ...(process.env.GITLAB_CLIENT_ID && process.env.GITLAB_CLIENT_SECRET
+      ? [
+          GitLabProvider({
+            clientId: process.env.GITLAB_CLIENT_ID,
+            clientSecret: process.env.GITLAB_CLIENT_SECRET,
+            ...(process.env.GITLAB_URL && {
+              issuer: process.env.GITLAB_URL,
+            }),
           }),
         ]
       : []),
