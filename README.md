@@ -90,7 +90,7 @@ See [tests/README.md](tests/README.md) for comprehensive testing documentation.
 ### User Management
 - ✅ Role-based access control (OWNER, ADMIN, MEMBER, VIEWER)
 - ✅ User invitation and management
-- ✅ Multiple authentication providers (Email/Password, Google, GitHub)
+- ✅ Multiple authentication providers (Email/Password, Google, GitHub, GitLab)
 - ✅ Organization-level user isolation
 
 ### Integrations & Notifications
@@ -286,6 +286,9 @@ GOOGLE_CLIENT_ID="..."
 GOOGLE_CLIENT_SECRET="..."
 GITHUB_CLIENT_ID="..."
 GITHUB_CLIENT_SECRET="..."
+GITLAB_CLIENT_ID="..."
+GITLAB_CLIENT_SECRET="..."
+GITLAB_URL="..."  # Optional: For self-hosted GitLab
 
 # Retention (Optional)
 RETAIN_SCANS_FOR_DAYS="90"
@@ -296,6 +299,7 @@ RETAIN_RESOLVED_FOR_DAYS="30"
 
 - **[Quick Start Guide](./docs/QUICKSTART.md)** - Get running in 5 minutes
 - **[Integration Guide](./docs/INTEGRATION_GUIDE.md)** - CI/CD integration with examples
+- **[OAuth Setup Guide](./docs/OAUTH_SETUP.md)** - Configure Google, GitHub, and GitLab OAuth
 
 ## Supported Scanners
 
