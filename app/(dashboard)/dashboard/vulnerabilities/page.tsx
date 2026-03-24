@@ -15,7 +15,7 @@ export default async function VulnerabilitiesPage({
 
   // Get organization details
   const organization = await prisma.organization.findUnique({
-    where: { id: authContext.organizationId },
+    where: { id: authContext.organizationId ?? undefined },
   });
 
   if (!organization) {
@@ -26,7 +26,7 @@ export default async function VulnerabilitiesPage({
   const where: any = {
     project: {
       repository: {
-        organizationId: authContext.organizationId,
+        organizationId: authContext.organizationId ?? undefined,
       },
     },
   };

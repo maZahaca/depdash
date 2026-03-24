@@ -6,6 +6,10 @@ import { requireViewAccess, checkEditAccess } from "@/lib/auth-utils";
 export default async function SettingsPage() {
   const authContext = await requireViewAccess("settings");
 
+  if (!authContext.organizationId) {
+    return <div>No organization selected</div>;
+  }
+
   // Get organization details
   const organization = await prisma.organization.findUnique({
     where: { id: authContext.organizationId },

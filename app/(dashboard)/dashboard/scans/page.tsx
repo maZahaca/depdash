@@ -16,6 +16,10 @@ export default async function ScansPage({
   const authContext = await requireViewAccess("scans");
   const params = await searchParams;
 
+  if (!authContext.organizationId) {
+    return <div>No organization selected</div>;
+  }
+
   // Get organization details
   const organization = await prisma.organization.findUnique({
     where: { id: authContext.organizationId },

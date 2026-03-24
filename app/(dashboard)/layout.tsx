@@ -27,9 +27,9 @@ export default async function DashboardLayout({
   }
 
   // Check which navigation items user can view
-  const showIntegrations = authContext.isSuperAdmin || canView(authContext.role, "integrations");
-  const showSettings = authContext.isSuperAdmin || canView(authContext.role, "settings");
-  const showUsers = authContext.isSuperAdmin || canView(authContext.role, "users");
+  const showIntegrations = authContext.isSuperAdmin || canView(authContext.role ?? undefined, "integrations");
+  const showSettings = authContext.isSuperAdmin || canView(authContext.role ?? undefined, "settings");
+  const showUsers = authContext.isSuperAdmin || canView(authContext.role ?? undefined, "users");
 
   return (
     <div className="min-h-screen bg-gray-50">

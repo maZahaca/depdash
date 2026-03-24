@@ -113,7 +113,7 @@ export async function requireViewAccess(resource: Resource, orgId?: string): Pro
     return context;
   }
 
-  if (!canView(context.role, resource)) {
+  if (!canView(context.role ?? undefined, resource)) {
     notFound();
   }
 
@@ -132,7 +132,7 @@ export async function requireEditAccess(resource: Resource, orgId?: string): Pro
     return context;
   }
 
-  if (!canEdit(context.role, resource)) {
+  if (!canEdit(context.role ?? undefined, resource)) {
     notFound();
   }
 
@@ -155,7 +155,7 @@ export async function checkViewAccess(resource: Resource): Promise<boolean> {
     return true;
   }
 
-  return canView(context.role, resource);
+  return canView(context.role ?? undefined, resource);
 }
 
 /**
@@ -174,7 +174,7 @@ export async function checkEditAccess(resource: Resource): Promise<boolean> {
     return true;
   }
 
-  return canEdit(context.role, resource);
+  return canEdit(context.role ?? undefined, resource);
 }
 
 /**
