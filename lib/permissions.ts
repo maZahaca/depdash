@@ -11,7 +11,8 @@ export type Resource =
   | "settings"
   | "users"
   | "api_tokens"
-  | "slack_webhooks";
+  | "slack_webhooks"
+  | "organizations"; // Only SUPER_ADMIN can access
 
 type PermissionConfig = {
   [K in Resource]: {
@@ -80,6 +81,13 @@ export const PERMISSIONS: PermissionConfig = {
     ADMIN: ["VIEW", "EDIT"],
     MEMBER: ["VIEW"],
     VIEWER: [], // No access
+  },
+  organizations: {
+    // Only SUPER_ADMIN can access - handled in auth-utils
+    OWNER: [],
+    ADMIN: [],
+    MEMBER: [],
+    VIEWER: [],
   },
 };
 

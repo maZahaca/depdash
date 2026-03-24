@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
-export function AddUserForm({ organizationId }: { organizationId: string }) {
+export function AddOrganizationForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -16,33 +16,30 @@ export function AddUserForm({ organizationId }: { organizationId: string }) {
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/v1/users", {
+      const response = await fetch("/api/v1/organizations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: formData.get("email"),
           name: formData.get("name"),
-          password: formData.get("password"),
-          role: formData.get("role"),
-          organizationId,
+          slug: formData.get("slug"),
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Failed to add user");
+        throw new Error(data.error || "Failed to create organization");
       }
 
-      setSuccess("User added successfully!");
+      setSuccess("Organization created successfully!");
       router.refresh();
 
       // Reset form
-      const form = document.getElementById("add-user-form") as HTMLFormElement;
+      const form = document.getElementById("add-org-form") as HTMLFormElement;
       form?.reset();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add user");
+      setError(err instanceof Error ? err.message : "Failed to create organization");
     } finally {
       setIsLoading(false);
     }
@@ -50,7 +47,7 @@ export function AddUserForm({ organizationId }: { organizationId: string }) {
 
   return (
     <form
-      id="add-user-form"
+      id="add-org-form"
       action={handleSubmit}
       className="space-y-4"
     >
@@ -68,67 +65,40 @@ export function AddUserForm({ organizationId }: { organizationId: string }) {
 
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-2">
-            Email *
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="user@example.com"
-          />
-        </div>
-
-        <div>
           <label htmlFor="name" className="block text-sm font-medium mb-2">
-            Name
+            Organization Name *
           </label>
           <input
             id="name"
             name="name"
             type="text"
+            required
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="John Doe"
+            placeholder="Acme Corporation"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium mb-2">
-            Password *
+          <label htmlFor="slug" className="block text-sm font-medium mb-2">
+            Slug *
           </label>
           <input
-            id="password"
-            name="password"
-            type="password"
+            id="slug"
+            name="slug"
+            type="text"
             required
-            minLength={8}
+            pattern="[a-z0-9-]+"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="••••••••"
+            placeholder="acme"
           />
-        </div>
-
-        <div>
-          <label htmlFor="role" className="block text-sm font-medium mb-2">
-            Role *
-          </label>
-          <select
-            id="role"
-            name="role"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            <option value="MEMBER">Member</option>
-            <option value="ADMIN">Admin</option>
-            <option value="VIEWER">Viewer</option>
-            <option value="OWNER">Owner</option>
-          </select>
+          <p className="text-xs text-muted-foreground mt-1">
+            Lowercase letters, numbers, and hyphens only
+          </p>
         </div>
       </div>
 
       <Button type="submit" disabled={isLoading}>
-        {isLoading ? "Adding..." : "Add User"}
+        {isLoading ? "Creating..." : "Create Organization"}
       </Button>
     </form>
   );

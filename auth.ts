@@ -11,7 +11,8 @@ import { skipCSRFCheck } from '@auth/core';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  adapter: PrismaAdapter(prisma),
+  // Don't use adapter with JWT strategy for credentials provider
+  // adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   ...(process.env.NODE_ENV === 'test' && { skipCSRFCheck: skipCSRFCheck }),
   providers: [
@@ -29,7 +30,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
           .safeParse(credentials);
 
-        if (!parsedCredentials.success) return null;
+        if (!parsedCredentials.success) {
+          console.error('Auth: Invalid credentials format');
+          return null;
+        }
 
         const { email, password } = parsedCredentials.data;
 
@@ -39,6 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user || !user.password) {
+          console.error('Auth: User not found or no password:', email);
           return null; // User doesn't exist or has no password (OAuth user)
         }
 
@@ -47,10 +52,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
+          console.error('Auth: Invalid password for user:', email);
           return null;
         }
 
-        return user;
+        console.log('Auth: Successfully authenticated user:', email);
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerified: user.emailVerified,
+          image: user.image,
+        };
       },
     }),
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET

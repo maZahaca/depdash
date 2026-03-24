@@ -16,10 +16,20 @@ export default async function DashboardLayout({
   // Get session for email display
   const session = await auth();
 
+  // Get current organization name
+  let currentOrgName = null;
+  if (authContext.organizationId) {
+    const org = await prisma.organization.findUnique({
+      where: { id: authContext.organizationId },
+      select: { name: true },
+    });
+    currentOrgName = org?.name;
+  }
+
   // Check which navigation items user can view
-  const showIntegrations = canView(authContext.role, "integrations");
-  const showSettings = canView(authContext.role, "settings");
-  const showUsers = canView(authContext.role, "users");
+  const showIntegrations = authContext.isSuperAdmin || canView(authContext.role, "integrations");
+  const showSettings = authContext.isSuperAdmin || canView(authContext.role, "settings");
+  const showUsers = authContext.isSuperAdmin || canView(authContext.role, "users");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -83,6 +93,19 @@ export default async function DashboardLayout({
             </nav>
           </div>
           <div className="flex items-center space-x-4">
+            {currentOrgName && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">Org:</span>
+                <span className="text-sm font-medium">{currentOrgName}</span>
+              </div>
+            )}
+            {authContext.isSuperAdmin && (
+              <Link href="/admin">
+                <Button variant="outline" size="sm">
+                  Back to Admin
+                </Button>
+              </Link>
+            )}
             <span className="text-sm text-muted-foreground">{session?.user?.email}</span>
             <form
               action={async () => {

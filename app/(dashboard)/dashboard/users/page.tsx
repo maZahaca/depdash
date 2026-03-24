@@ -56,7 +56,7 @@ export default async function UsersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <AddUserForm organizationId={authContext.organizationId} />
+              <AddUserForm organizationId={authContext.organizationId!} />
             </CardContent>
           </Card>
         )}

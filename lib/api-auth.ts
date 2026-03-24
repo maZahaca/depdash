@@ -21,8 +21,19 @@ export async function getApiAuthContext(): Promise<ApiAuthContext | null> {
     return null;
   }
 
+  // Get organization from session (JWT)
+  const organizationId = session.user.organizationId;
+
+  if (!organizationId) {
+    return null;
+  }
+
+  // Get role from database
   const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      organizationId,
+    },
   });
 
   if (!membership) {
@@ -31,7 +42,7 @@ export async function getApiAuthContext(): Promise<ApiAuthContext | null> {
 
   return {
     userId: session.user.id,
-    organizationId: membership.organizationId,
+    organizationId,
     role: membership.role,
   };
 }

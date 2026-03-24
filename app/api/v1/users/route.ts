@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    const validRoles = ["MEMBER", "ADMIN", "VIEWER"];
+    const validRoles = ["MEMBER", "ADMIN", "VIEWER", "OWNER"];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
-        { error: "Invalid role. Must be MEMBER, ADMIN, or VIEWER" },
+        { error: "Invalid role. Must be MEMBER, ADMIN, VIEWER, or OWNER" },
         { status: 400 }
       );
     }
