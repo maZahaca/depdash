@@ -182,16 +182,7 @@ export async function checkEditAccess(resource: Resource): Promise<boolean> {
  */
 export async function isSuperAdmin(): Promise<boolean> {
   const session = await auth();
-  if (!session?.user?.id) {
-    return false;
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { isSuperAdmin: true },
-  });
-
-  return user?.isSuperAdmin || false;
+  return session?.user?.isSuperAdmin || false;
 }
 
 /**

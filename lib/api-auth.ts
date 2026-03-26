@@ -9,6 +9,7 @@ export type ApiAuthContext = {
   userId: string;
   organizationId: string;
   role: MemberRole;
+  isSuperAdmin: boolean;
 };
 
 /**
@@ -44,6 +45,7 @@ export async function getApiAuthContext(): Promise<ApiAuthContext | null> {
     userId: session.user.id,
     organizationId,
     role: membership.role,
+    isSuperAdmin: session.user.isSuperAdmin || false,
   };
 }
 
@@ -87,6 +89,7 @@ export async function getApiTokenContext(
     userId: apiToken.organization.members[0].userId,
     organizationId: apiToken.organizationId,
     role: "OWNER",
+    isSuperAdmin: false, // API tokens are never super admin
   };
 }
 
@@ -125,6 +128,11 @@ export async function requireApiViewAccess(
     return context;
   }
 
+  // Super admins have access to everything
+  if (context.isSuperAdmin) {
+    return context;
+  }
+
   if (!canView(context.role, resource)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -142,6 +150,11 @@ export async function requireApiEditAccess(
   const context = await requireApiAuth(request);
 
   if (context instanceof NextResponse) {
+    return context;
+  }
+
+  // Super admins have access to everything
+  if (context.isSuperAdmin) {
     return context;
   }
 

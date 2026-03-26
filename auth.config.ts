@@ -1,5 +1,4 @@
 import type { NextAuthConfig } from 'next-auth';
-import prisma from './lib/prisma';
 
 export const authConfig = {
   pages: {
@@ -23,15 +22,16 @@ export const authConfig = {
         if (!isLoggedIn) {
           return false; // NextAuth will redirect to /login
         }
-        return auth?.user?.isSuperAdmin || false;
+        if (!auth?.user?.isSuperAdmin) {
+          // Redirect non-super-admins to dashboard
+          return Response.redirect(new URL('/dashboard', nextUrl));
+        }
+        return true;
       }
 
       // Protect dashboard routes - require authentication
       if (isOnDashboard) {
-        if (!isLoggedIn) {
-          return false; // NextAuth will redirect to /login
-        }
-        return true;
+        return isLoggedIn;
       }
 
       return true;
@@ -46,31 +46,11 @@ export const authConfig = {
       return session;
     },
     async jwt({ token, user, trigger, session }) {
-      // Initial sign in - fetch user data
+      // Initial sign in - copy user data to token
       if (user) {
         token.sub = user.id;
-
-        // Fetch isSuperAdmin and organizationId
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: {
-            isSuperAdmin: true,
-          },
-        });
-
-        token.isSuperAdmin = dbUser?.isSuperAdmin || false;
-
-        // For non-super admins, fetch their organization
-        if (!dbUser?.isSuperAdmin) {
-          const membership = await prisma.organizationMember.findFirst({
-            where: { userId: user.id },
-            select: { organizationId: true },
-          });
-          token.organizationId = membership?.organizationId || undefined;
-        } else {
-          // Super admins start without an org
-          token.organizationId = undefined;
-        }
+        token.isSuperAdmin = user.isSuperAdmin || false;
+        token.organizationId = user.organizationId;
       }
 
       // Handle org selection update

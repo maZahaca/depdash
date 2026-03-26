@@ -14,12 +14,7 @@ export async function PATCH(
     }
 
     // Check if user is super admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { isSuperAdmin: true },
-    });
-
-    if (!user?.isSuperAdmin) {
+    if (!session.user.isSuperAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

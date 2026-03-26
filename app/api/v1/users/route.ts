@@ -34,6 +34,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Prevent privilege escalation: only OWNER or SUPER_ADMIN can assign OWNER role
+    if (role === "OWNER" && authContext.role !== "OWNER" && !authContext.isSuperAdmin) {
+      return NextResponse.json(
+        { error: "Only organization owners or super admins can assign the OWNER role" },
+        { status: 403 }
+      );
+    }
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },

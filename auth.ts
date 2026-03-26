@@ -1,5 +1,4 @@
 import NextAuth from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
@@ -37,13 +36,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const { email, password } = parsedCredentials.data;
 
-        // Find user
+        // Find user with membership info
         const user = await prisma.user.findUnique({
           where: { email },
+          include: {
+            memberships: {
+              take: 1,
+              select: {
+                organizationId: true,
+              },
+            },
+          },
         });
 
         if (!user || !user.password) {
-          console.error('Auth: User not found or no password:', email);
+          console.error('Auth: User not found or no password');
           return null; // User doesn't exist or has no password (OAuth user)
         }
 
@@ -52,17 +59,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
-          console.error('Auth: Invalid password for user:', email);
+          console.error('Auth: Invalid password');
           return null;
         }
 
-        console.log('Auth: Successfully authenticated user:', email);
+        console.log('Auth: Successfully authenticated user');
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           emailVerified: user.emailVerified,
           image: user.image,
+          isSuperAdmin: user.isSuperAdmin,
+          organizationId: user.isSuperAdmin ? undefined : user.memberships[0]?.organizationId,
         };
       },
     }),
