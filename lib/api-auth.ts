@@ -29,11 +29,26 @@ export async function getApiAuthContext(): Promise<ApiAuthContext | null> {
     return null;
   }
 
-  // Get role from database
+  // Super admins are not org members but still have access
+  if (session.user.isSuperAdmin) {
+    return {
+      userId: session.user.id,
+      organizationId,
+      role: "OWNER" as MemberRole,
+      isSuperAdmin: true,
+    };
+  }
+
+  // Get role and organization active status from database
   const membership = await prisma.organizationMember.findFirst({
     where: {
       userId: session.user.id,
       organizationId,
+    },
+    include: {
+      organization: {
+        select: { active: true },
+      },
     },
   });
 
@@ -41,11 +56,16 @@ export async function getApiAuthContext(): Promise<ApiAuthContext | null> {
     return null;
   }
 
+  // Regular users cannot access deactivated organizations
+  if (!membership.organization.active) {
+    return null;
+  }
+
   return {
     userId: session.user.id,
     organizationId,
     role: membership.role,
-    isSuperAdmin: session.user.isSuperAdmin || false,
+    isSuperAdmin: false,
   };
 }
 
@@ -81,6 +101,11 @@ export async function getApiTokenContext(
   });
 
   if (!apiToken || !apiToken.organization.members[0]) {
+    return null;
+  }
+
+  // API tokens cannot be used with deactivated organizations
+  if (!apiToken.organization.active) {
     return null;
   }
 

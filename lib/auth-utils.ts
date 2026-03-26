@@ -61,15 +61,25 @@ export async function getAuthContext(orgId?: string): Promise<AuthContext | null
     return null;
   }
 
-  // Fetch role from DB
+  // Fetch role and organization active status from DB
   const membership = await prisma.organizationMember.findFirst({
     where: {
       userId: session.user.id,
       organizationId: sessionOrgId,
     },
+    include: {
+      organization: {
+        select: { active: true },
+      },
+    },
   });
 
   if (!membership) {
+    return null;
+  }
+
+  // Regular users cannot access deactivated organizations
+  if (!membership.organization.active) {
     return null;
   }
 
