@@ -1,6 +1,5 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { requireSuperAdmin } from "@/lib/auth-utils";
 import { auth } from "@/auth";
 
 // GET /api/v1/organizations - List all organizations (SUPER_ADMIN only)
@@ -59,6 +58,15 @@ export async function POST(request: NextRequest) {
     if (!name || !slug) {
       return NextResponse.json(
         { error: "Name and slug are required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate slug format: lowercase alphanumeric with hyphens, 2-50 chars
+    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+    if (!slugRegex.test(slug) || slug.length < 2 || slug.length > 50) {
+      return NextResponse.json(
+        { error: "Slug must be 2-50 characters, lowercase alphanumeric with hyphens, no leading/trailing hyphens" },
         { status: 400 }
       );
     }

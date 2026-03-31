@@ -115,7 +115,7 @@ export async function requireAuth(): Promise<AuthContext> {
  * Require VIEW permission for a resource
  * Returns 404 if user doesn't have access
  */
-export async function requireViewAccess(resource: Resource, orgId?: string): Promise<AuthContext> {
+export async function requireViewAccess(resource: Resource): Promise<AuthContext> {
   const context = await requireAuth();
 
   // SUPER_ADMIN has access to everything
@@ -134,7 +134,7 @@ export async function requireViewAccess(resource: Resource, orgId?: string): Pro
  * Require EDIT permission for a resource
  * Returns 404 if user doesn't have access
  */
-export async function requireEditAccess(resource: Resource, orgId?: string): Promise<AuthContext> {
+export async function requireEditAccess(resource: Resource): Promise<AuthContext> {
   const context = await requireAuth();
 
   // SUPER_ADMIN has access to everything
@@ -201,15 +201,13 @@ export async function isSuperAdmin(): Promise<boolean> {
  * Does NOT require organization to be selected (for admin panel routes)
  */
 export async function requireSuperAdmin(): Promise<AuthContext> {
-  const session = await auth();
+  const context = await getAuthContext();
 
-  if (!session?.user?.id) {
+  if (!context) {
     redirect("/login");
   }
 
-  const context = await getAuthContext();
-
-  if (!context || !context.isSuperAdmin) {
+  if (!context.isSuperAdmin) {
     notFound();
   }
 
