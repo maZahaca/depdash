@@ -13,9 +13,14 @@ export default async function VulnerabilitiesPage({
   const authContext = await requireViewAccess("vulnerabilities");
   const params = await searchParams;
 
+  // Guard: Super admin must have selected an org
+  if (!authContext.organizationId) {
+    return <div>No organization selected. Please select an organization from the admin panel.</div>;
+  }
+
   // Get organization details
   const organization = await prisma.organization.findUnique({
-    where: { id: authContext.organizationId ?? undefined },
+    where: { id: authContext.organizationId },
   });
 
   if (!organization) {
@@ -26,7 +31,7 @@ export default async function VulnerabilitiesPage({
   const where: any = {
     project: {
       repository: {
-        organizationId: authContext.organizationId ?? undefined,
+        organizationId: authContext.organizationId,
       },
     },
   };
