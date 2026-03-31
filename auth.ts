@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import GitLabProvider from 'next-auth/providers/gitlab';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import { authConfig } from './auth.config';
 import prisma from './lib/prisma';
 import { z } from 'zod';
@@ -10,8 +11,8 @@ import { skipCSRFCheck } from '@auth/core';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  // Don't use adapter with JWT strategy for credentials provider
-  // adapter: PrismaAdapter(prisma),
+  // Adapter required for OAuth providers (Google, GitHub, GitLab)
+  adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   ...(process.env.NODE_ENV === 'test' && { skipCSRFCheck: skipCSRFCheck }),
   providers: [
