@@ -18,6 +18,7 @@ model User {
   password      String? // Hashed password (optional - null for OAuth users)
   emailVerified DateTime?
   image         String?
+  isSuperAdmin  Boolean   @default(false)
 
   accounts    Account[]
   sessions    Session[]
@@ -69,9 +70,10 @@ model VerificationToken {
 
 // Organization & Members
 model Organization {
-  id   String @id @default(uuid())
-  name String
-  slug String @unique
+  id     String  @id @default(uuid())
+  name   String
+  slug   String  @unique
+  active Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

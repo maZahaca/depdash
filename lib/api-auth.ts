@@ -9,6 +9,7 @@ export type ApiAuthContext = {
   userId: string;
   organizationId: string;
   role: MemberRole;
+  isSuperAdmin: boolean;
 };
 
 /**
@@ -21,18 +22,50 @@ export async function getApiAuthContext(): Promise<ApiAuthContext | null> {
     return null;
   }
 
+  // Get organization from session (JWT)
+  const organizationId = session.user.organizationId;
+
+  if (!organizationId) {
+    return null;
+  }
+
+  // Super admins are not org members but still have access
+  if (session.user.isSuperAdmin) {
+    return {
+      userId: session.user.id,
+      organizationId,
+      role: "OWNER" as MemberRole,
+      isSuperAdmin: true,
+    };
+  }
+
+  // Get role and organization active status from database
   const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      organizationId,
+    },
+    include: {
+      organization: {
+        select: { active: true },
+      },
+    },
   });
 
   if (!membership) {
     return null;
   }
 
+  // Regular users cannot access deactivated organizations
+  if (!membership.organization.active) {
+    return null;
+  }
+
   return {
     userId: session.user.id,
-    organizationId: membership.organizationId,
+    organizationId,
     role: membership.role,
+    isSuperAdmin: false,
   };
 }
 
@@ -71,11 +104,17 @@ export async function getApiTokenContext(
     return null;
   }
 
+  // API tokens cannot be used with deactivated organizations
+  if (!apiToken.organization.active) {
+    return null;
+  }
+
   // API tokens have OWNER level permissions for the organization
   return {
     userId: apiToken.organization.members[0].userId,
     organizationId: apiToken.organizationId,
     role: "OWNER",
+    isSuperAdmin: false, // API tokens are never super admin
   };
 }
 
@@ -114,6 +153,11 @@ export async function requireApiViewAccess(
     return context;
   }
 
+  // Super admins have access to everything
+  if (context.isSuperAdmin) {
+    return context;
+  }
+
   if (!canView(context.role, resource)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -131,6 +175,11 @@ export async function requireApiEditAccess(
   const context = await requireApiAuth(request);
 
   if (context instanceof NextResponse) {
+    return context;
+  }
+
+  // Super admins have access to everything
+  if (context.isSuperAdmin) {
     return context;
   }
 

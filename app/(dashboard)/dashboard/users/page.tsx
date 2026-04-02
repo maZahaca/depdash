@@ -8,6 +8,10 @@ import { requireViewAccess, checkEditAccess } from "@/lib/auth-utils";
 export default async function UsersPage() {
   const authContext = await requireViewAccess("users");
 
+  if (!authContext.organizationId) {
+    return <div>No organization selected</div>;
+  }
+
   // Get organization with members
   const organization = await prisma.organization.findUnique({
     where: { id: authContext.organizationId },
@@ -56,7 +60,7 @@ export default async function UsersPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <AddUserForm organizationId={authContext.organizationId} />
+              <AddUserForm organizationId={authContext.organizationId!} />
             </CardContent>
           </Card>
         )}

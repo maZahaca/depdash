@@ -6,28 +6,53 @@ import { Resource, canView, canEdit } from "./permissions";
 
 export type AuthContext = {
   userId: string;
-  organizationId: string;
-  role: MemberRole;
+  organizationId: string | null; // null for SUPER_ADMIN
+  role: MemberRole | null; // null for SUPER_ADMIN
+  isSuperAdmin: boolean;
 };
 
 /**
  * Get the authenticated user's context including their organization and role
- * Returns null if user is not authenticated or not part of an organization
+ * Returns null if user is not authenticated
+ * For SUPER_ADMIN: organizationId may be null if not selected yet
  */
-export async function getAuthContext(): Promise<AuthContext | null> {
+export async function getAuthContext(orgId?: string): Promise<AuthContext | null> {
   const session = await auth();
 
   if (!session?.user?.id) {
     return null;
   }
 
+  const isSuperAdmin = session.user.isSuperAdmin || false;
+  const sessionOrgId = session.user.organizationId;
+
+  // Use explicitly passed orgId, then session orgId
+  const effectiveOrgId = orgId || sessionOrgId;
+
+  if (isSuperAdmin) {
+    // Super admin - role is always null (permissions bypass role checks)
+    return {
+      userId: session.user.id,
+      organizationId: effectiveOrgId || null,
+      role: null,
+      isSuperAdmin: true,
+    };
+  }
+
+  // Regular user - must have organizationId in session
+  if (!sessionOrgId) {
+    return null;
+  }
+
+  // Fetch role and organization active status from DB
   const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      organizationId: sessionOrgId,
+    },
     include: {
       organization: {
-        select: {
-          id: true,
-        },
+        select: { active: true },
       },
     },
   });
@@ -36,23 +61,34 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     return null;
   }
 
+  // Regular users cannot access deactivated organizations
+  if (!membership.organization.active) {
+    return null;
+  }
+
   return {
     userId: session.user.id,
-    organizationId: membership.organizationId,
+    organizationId: sessionOrgId,
     role: membership.role,
+    isSuperAdmin: false,
   };
 }
 
 /**
  * Require authentication and organization membership
  * Redirects to login if not authenticated
- * Returns 404 if user is not part of an organization
+ * Redirects super admins without org to admin panel
  */
 export async function requireAuth(): Promise<AuthContext> {
   const context = await getAuthContext();
 
   if (!context) {
     redirect("/login");
+  }
+
+  // Super admins without org should use admin panel
+  if (context.isSuperAdmin && !context.organizationId) {
+    redirect("/admin");
   }
 
   return context;
@@ -65,7 +101,12 @@ export async function requireAuth(): Promise<AuthContext> {
 export async function requireViewAccess(resource: Resource): Promise<AuthContext> {
   const context = await requireAuth();
 
-  if (!canView(context.role, resource)) {
+  // SUPER_ADMIN has access to everything
+  if (context.isSuperAdmin) {
+    return context;
+  }
+
+  if (!canView(context.role ?? undefined, resource)) {
     notFound();
   }
 
@@ -79,7 +120,12 @@ export async function requireViewAccess(resource: Resource): Promise<AuthContext
 export async function requireEditAccess(resource: Resource): Promise<AuthContext> {
   const context = await requireAuth();
 
-  if (!canEdit(context.role, resource)) {
+  // SUPER_ADMIN has access to everything
+  if (context.isSuperAdmin) {
+    return context;
+  }
+
+  if (!canEdit(context.role ?? undefined, resource)) {
     notFound();
   }
 
@@ -97,7 +143,12 @@ export async function checkViewAccess(resource: Resource): Promise<boolean> {
     return false;
   }
 
-  return canView(context.role, resource);
+  // SUPER_ADMIN has access to everything
+  if (context.isSuperAdmin) {
+    return true;
+  }
+
+  return canView(context.role ?? undefined, resource);
 }
 
 /**
@@ -111,5 +162,37 @@ export async function checkEditAccess(resource: Resource): Promise<boolean> {
     return false;
   }
 
-  return canEdit(context.role, resource);
+  // SUPER_ADMIN has access to everything
+  if (context.isSuperAdmin) {
+    return true;
+  }
+
+  return canEdit(context.role ?? undefined, resource);
+}
+
+/**
+ * Check if user is a SUPER_ADMIN
+ */
+export async function isSuperAdmin(): Promise<boolean> {
+  const session = await auth();
+  return session?.user?.isSuperAdmin || false;
+}
+
+/**
+ * Require SUPER_ADMIN role
+ * Returns 404 if user is not a SUPER_ADMIN
+ * Does NOT require organization to be selected (for admin panel routes)
+ */
+export async function requireSuperAdmin(): Promise<AuthContext> {
+  const context = await getAuthContext();
+
+  if (!context) {
+    redirect("/login");
+  }
+
+  if (!context.isSuperAdmin) {
+    notFound();
+  }
+
+  return context;
 }

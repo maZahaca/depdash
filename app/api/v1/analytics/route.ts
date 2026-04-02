@@ -11,16 +11,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get user's organization
-    const membership = await prisma.organizationMember.findFirst({
-      where: { userId: session.user.id },
-    });
+    // Get organization from session (JWT)
+    const organizationId = session.user.organizationId;
 
-    if (!membership) {
+    if (!organizationId) {
       return NextResponse.json({ error: "No organization found" }, { status: 404 });
     }
-
-    const organizationId = membership.organizationId;
     const { searchParams } = new URL(request.url);
     const days = parseInt(searchParams.get("days") || "30");
 

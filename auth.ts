@@ -1,9 +1,9 @@
 import NextAuth from 'next-auth';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import GitHubProvider from 'next-auth/providers/github';
 import GitLabProvider from 'next-auth/providers/gitlab';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import { authConfig } from './auth.config';
 import prisma from './lib/prisma';
 import { z } from 'zod';
@@ -11,9 +11,38 @@ import { skipCSRFCheck } from '@auth/core';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  // Adapter required for OAuth providers (Google, GitHub, GitLab)
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   ...(process.env.NODE_ENV === 'test' && { skipCSRFCheck: skipCSRFCheck }),
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user, trigger, session }) {
+      // Initial sign in - copy user data to token
+      if (user) {
+        token.sub = user.id;
+        token.isSuperAdmin = user.isSuperAdmin || false;
+        token.organizationId = user.organizationId;
+
+        // For OAuth sign-ins, organizationId won't be on the user object
+        // Query OrganizationMember to get the user's organization
+        if (!user.isSuperAdmin && !user.organizationId) {
+          const membership = await prisma.organizationMember.findFirst({
+            where: { userId: user.id! },
+            select: { organizationId: true },
+          });
+          token.organizationId = membership?.organizationId;
+        }
+      }
+
+      // Handle org selection update (super admins only)
+      if (trigger === 'update' && session?.organizationId && token.isSuperAdmin) {
+        token.organizationId = session.organizationId;
+      }
+
+      return token;
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'Email',
@@ -29,16 +58,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
           .safeParse(credentials);
 
-        if (!parsedCredentials.success) return null;
+        if (!parsedCredentials.success) {
+          console.error('Auth: Invalid credentials format');
+          return null;
+        }
 
         const { email, password } = parsedCredentials.data;
 
-        // Find user
+        // Find user with membership info
         const user = await prisma.user.findUnique({
           where: { email },
+          include: {
+            memberships: {
+              take: 1,
+              select: {
+                organizationId: true,
+              },
+            },
+          },
         });
 
         if (!user || !user.password) {
+          console.error('Auth: User not found or no password');
           return null; // User doesn't exist or has no password (OAuth user)
         }
 
@@ -47,10 +88,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
 
         if (!isValid) {
+          console.error('Auth: Invalid password');
           return null;
         }
 
-        return user;
+        console.log('Auth: Successfully authenticated user');
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          emailVerified: user.emailVerified,
+          image: user.image,
+          isSuperAdmin: user.isSuperAdmin,
+          organizationId: user.isSuperAdmin ? undefined : user.memberships[0]?.organizationId,
+        };
       },
     }),
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET

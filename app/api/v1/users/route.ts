@@ -26,11 +26,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    const validRoles = ["MEMBER", "ADMIN", "VIEWER"];
+    const validRoles = ["MEMBER", "ADMIN", "VIEWER", "OWNER"];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
-        { error: "Invalid role. Must be MEMBER, ADMIN, or VIEWER" },
+        { error: "Invalid role. Must be MEMBER, ADMIN, VIEWER, or OWNER" },
         { status: 400 }
+      );
+    }
+
+    // Prevent privilege escalation: only OWNER or SUPER_ADMIN can assign OWNER role
+    if (role === "OWNER" && authContext.role !== "OWNER" && !authContext.isSuperAdmin) {
+      return NextResponse.json(
+        { error: "Only organization owners or super admins can assign the OWNER role" },
+        { status: 403 }
       );
     }
 

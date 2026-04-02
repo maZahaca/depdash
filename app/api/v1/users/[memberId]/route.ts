@@ -25,22 +25,26 @@ export async function DELETE(
       return NextResponse.json({ error: "Member not found" }, { status: 404 });
     }
 
-    // Check if current user has permission to delete (OWNER or ADMIN in the same org)
-    const currentUserMembership = await prisma.organizationMember.findFirst({
-      where: {
-        userId: session.user.id,
-        organizationId: membershipToDelete.organizationId,
-      },
-    });
+    // Check if current user has permission to delete (SUPER_ADMIN, OWNER or ADMIN in the same org)
+    // Super admins can delete any member
+    if (!session.user.isSuperAdmin) {
+      const currentUserMembership = await prisma.organizationMember.findFirst({
+        where: {
+          userId: session.user.id,
+          organizationId: membershipToDelete.organizationId,
+        },
+      });
 
-    if (
-      !currentUserMembership ||
-      (currentUserMembership.role !== "OWNER" && currentUserMembership.role !== "ADMIN")
-    ) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+      if (
+        !currentUserMembership ||
+        (currentUserMembership.role !== "OWNER" &&
+         currentUserMembership.role !== "ADMIN")
+      ) {
+        return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+      }
     }
 
-    // Prevent deleting owners
+    // Prevent deleting OWNER roles
     if (membershipToDelete.role === "OWNER") {
       return NextResponse.json({ error: "Cannot remove owner" }, { status: 403 });
     }

@@ -7,6 +7,10 @@ import { requireViewAccess } from "@/lib/auth-utils";
 export default async function RepositoriesPage() {
   const authContext = await requireViewAccess("repositories");
 
+  if (!authContext.organizationId) {
+    return <div>No organization selected</div>;
+  }
+
   // Get organization details
   const organization = await prisma.organization.findUnique({
     where: { id: authContext.organizationId },

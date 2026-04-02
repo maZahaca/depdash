@@ -21,10 +21,30 @@ async function main() {
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create test user with password
+  // Create test users with password
   const hashedPassword = await bcrypt.hash('password', 10);
 
-  const testUser = await prisma.user.create({
+  // Create super admin user (system-wide, not tied to org)
+  const superAdminUser = await prisma.user.create({
+    data: {
+      email: 'super@depdash.dev',
+      name: 'Super Admin',
+      password: hashedPassword,
+      emailVerified: new Date(),
+      isSuperAdmin: true,
+    },
+  });
+
+  const ownerUser = await prisma.user.create({
+    data: {
+      email: 'owner@depdash.dev',
+      name: 'Owner User',
+      password: hashedPassword,
+      emailVerified: new Date(),
+    },
+  });
+
+  const adminUser = await prisma.user.create({
     data: {
       email: 'admin@depdash.dev',
       name: 'Admin User',
@@ -33,29 +53,76 @@ async function main() {
     },
   });
 
-  console.log('✅ Created test user:', testUser.email);
-  console.log('   Password: password');
+  const memberUser = await prisma.user.create({
+    data: {
+      email: 'member@depdash.dev',
+      name: 'Member User',
+      password: hashedPassword,
+      emailVerified: new Date(),
+    },
+  });
+
+  const viewerUser = await prisma.user.create({
+    data: {
+      email: 'viewer@depdash.dev',
+      name: 'Viewer User',
+      password: hashedPassword,
+      emailVerified: new Date(),
+    },
+  });
+
+  console.log('✅ Created test users with password: password');
+  console.log('   - super@depdash.dev (System SUPER_ADMIN)');
+  console.log('   - owner@depdash.dev (OWNER)');
+  console.log('   - admin@depdash.dev (ADMIN)');
+  console.log('   - member@depdash.dev (MEMBER)');
+  console.log('   - viewer@depdash.dev (VIEWER)');
 
   // Create test organization
   const testOrg = await prisma.organization.create({
     data: {
       name: 'Acme Corporation',
       slug: 'acme',
+      active: true,
     },
   });
 
   console.log('✅ Created organization:', testOrg.name);
 
-  // Add user as organization owner
+  // Add org users (not super admin)
   await prisma.organizationMember.create({
     data: {
       organizationId: testOrg.id,
-      userId: testUser.id,
+      userId: ownerUser.id,
       role: MemberRole.OWNER,
     },
   });
 
-  console.log('✅ Added user as organization owner');
+  await prisma.organizationMember.create({
+    data: {
+      organizationId: testOrg.id,
+      userId: adminUser.id,
+      role: MemberRole.ADMIN,
+    },
+  });
+
+  await prisma.organizationMember.create({
+    data: {
+      organizationId: testOrg.id,
+      userId: memberUser.id,
+      role: MemberRole.MEMBER,
+    },
+  });
+
+  await prisma.organizationMember.create({
+    data: {
+      organizationId: testOrg.id,
+      userId: viewerUser.id,
+      role: MemberRole.VIEWER,
+    },
+  });
+
+  console.log('✅ Added users to organization (SUPER_ADMIN has system-wide access)');
 
   // Create organization settings
   const settings = await prisma.settings.create({
@@ -87,7 +154,7 @@ async function main() {
       name: 'Test API Token',
       tokenHash,
       prefix: tokenString.substring(0, 8),
-      createdBy: testUser.id,
+      createdBy: ownerUser.id,
     },
   });
 
@@ -257,7 +324,7 @@ async function main() {
       fixByDate: new Date(now.getTime() + 76 * 24 * 60 * 60 * 1000),
       status: VulnStatus.POSTPONED,
       statusChangedAt: now,
-      statusChangedBy: testUser.id,
+      statusChangedBy: ownerUser.id,
       statusNote: 'Waiting for next major version release',
       postponedUntil: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days
     },
@@ -297,7 +364,12 @@ async function main() {
   console.log('✅ Created audit scans');
 
   console.log('\n🎉 Seed completed successfully!\n');
-  console.log('📧 Test User Email: admin@depdash.dev');
+  console.log('📧 Test User Emails (all with password "password"):');
+  console.log('   - super@depdash.dev (System SUPER_ADMIN - not tied to org)');
+  console.log('   - owner@depdash.dev (OWNER)');
+  console.log('   - admin@depdash.dev (ADMIN)');
+  console.log('   - member@depdash.dev (MEMBER)');
+  console.log('   - viewer@depdash.dev (VIEWER)');
   console.log('🔑 API Token:', tokenString);
   console.log('🏢 Organization: Acme Corporation (slug: acme)');
   console.log('\n💡 Use these credentials to login and test the application');
