@@ -45,21 +45,7 @@ export const authConfig = {
       }
       return session;
     },
-    async jwt({ token, user, trigger, session }) {
-      // Initial sign in - copy user data to token
-      if (user) {
-        token.sub = user.id;
-        token.isSuperAdmin = user.isSuperAdmin || false;
-        token.organizationId = user.organizationId;
-      }
-
-      // Handle org selection update (super admins only)
-      if (trigger === 'update' && session?.organizationId && token.isSuperAdmin) {
-        token.organizationId = session.organizationId;
-      }
-
-      return token;
-    },
+    // JWT callback moved to auth.ts to access Prisma for OAuth organizationId lookup
   },
   providers: [], // Add providers with an empty array for now
 } satisfies NextAuthConfig;

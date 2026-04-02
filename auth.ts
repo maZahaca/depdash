@@ -15,6 +15,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   ...(process.env.NODE_ENV === 'test' && { skipCSRFCheck: skipCSRFCheck }),
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user, trigger, session }) {
+      // Initial sign in - copy user data to token
+      if (user) {
+        token.sub = user.id;
+        token.isSuperAdmin = user.isSuperAdmin || false;
+        token.organizationId = user.organizationId;
+
+        // For OAuth sign-ins, organizationId won't be on the user object
+        // Query OrganizationMember to get the user's organization
+        if (!user.isSuperAdmin && !user.organizationId) {
+          const membership = await prisma.organizationMember.findFirst({
+            where: { userId: user.id! },
+            select: { organizationId: true },
+          });
+          token.organizationId = membership?.organizationId;
+        }
+      }
+
+      // Handle org selection update (super admins only)
+      if (trigger === 'update' && session?.organizationId && token.isSuperAdmin) {
+        token.organizationId = session.organizationId;
+      }
+
+      return token;
+    },
+  },
   providers: [
     CredentialsProvider({
       name: 'Email',
