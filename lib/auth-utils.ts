@@ -30,27 +30,10 @@ export async function getAuthContext(orgId?: string): Promise<AuthContext | null
   const effectiveOrgId = orgId || sessionOrgId;
 
   if (isSuperAdmin) {
-    // Super admin with an org selected
-    if (effectiveOrgId) {
-      const membership = await prisma.organizationMember.findFirst({
-        where: {
-          userId: session.user.id,
-          organizationId: effectiveOrgId,
-        },
-      });
-
-      return {
-        userId: session.user.id,
-        organizationId: effectiveOrgId,
-        role: membership?.role || null,
-        isSuperAdmin: true,
-      };
-    }
-
-    // Super admin without org selected
+    // Super admin - role is always null (permissions bypass role checks)
     return {
       userId: session.user.id,
-      organizationId: null,
+      organizationId: effectiveOrgId || null,
       role: null,
       isSuperAdmin: true,
     };

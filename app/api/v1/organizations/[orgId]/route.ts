@@ -38,8 +38,17 @@ export async function PATCH(
       message: `Organization ${active ? "activated" : "deactivated"} successfully`,
       organization,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating organization:", error);
+
+    // Return 404 for non-existent organization (Prisma P2025 error)
+    if (error?.code === 'P2025') {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to update organization" },
       { status: 500 }

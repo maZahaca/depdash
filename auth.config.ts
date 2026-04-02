@@ -53,8 +53,8 @@ export const authConfig = {
         token.organizationId = user.organizationId;
       }
 
-      // Handle org selection update
-      if (trigger === 'update' && session?.organizationId) {
+      // Handle org selection update (super admins only)
+      if (trigger === 'update' && session?.organizationId && token.isSuperAdmin) {
         token.organizationId = session.organizationId;
       }
 
