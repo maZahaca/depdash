@@ -3,11 +3,11 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "DepDash - Dependency Vulnerability Dashboard",
-  description: "Company-level dashboard for tracking dependency vulnerabilities",
+  description: "Company-wide dashboard for tracking dependency vulnerabilities",
 };
 
 export default function RootLayout({
@@ -16,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.variable}>
         <Providers>{children}</Providers>
       </body>
     </html>
