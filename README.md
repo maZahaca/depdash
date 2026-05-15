@@ -7,6 +7,8 @@
 
 Company-level dashboard for tracking dependency vulnerabilities across **10 programming ecosystems** with comprehensive CI/CD integration.
 
+![Dashbord](assets/dashboard.png)
+
 ## Quick Start
 
 ### Prerequisites
